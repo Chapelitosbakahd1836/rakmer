@@ -1,0 +1,2 @@
+@echo off
+curl -k -v -X POST -H "X-N8N-API-KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYTVhMTg3OC0yZDRhLTQyY2UtOTg1ZC1hODkyMDE2ZjE4Y2UiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiZDFjMDUzMDctM2Y4Yi00YWQ1LTkxMzEtMzA4OGY2OTQ5NTliIiwiaWF0IjoxNzcwNzMzNTI5fQ.zQogwPZx7MF-52YrAq7A_ihm1XEyNe619iNCHhCgUB8" -H "Content-Type: application/json" -d @minimal_workflow.json "https://n8n.vendaiads.cloud/api/v1/workflows"

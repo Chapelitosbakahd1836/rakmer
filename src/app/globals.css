@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --circus-red: #E63946;
+  --circus-dark: #0d0408;
+  --circus-gold: #FFD700;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--circus-dark);
+  color: white;
+  overflow-x: hidden;
+}
+
+@layer utilities {
+  .text-circus-red {
+    color: var(--circus-red);
+  }
+  .bg-circus-red {
+    background-color: var(--circus-red);
+  }
+  .border-circus-red {
+    border-color: var(--circus-red);
+  }
+}
+
+@keyframes spotlight {
+  0%, 100% {
+    opacity: 1;
+    transform: scaleX(1) scaleY(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scaleX(1.08) scaleY(1.05);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.08;
+    transform: scale(0.4);
+  }
+}

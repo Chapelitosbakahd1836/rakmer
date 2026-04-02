@@ -262,6 +262,35 @@ export default function FunilCompra() {
       style={{ minHeight: '100dvh' }}
     >
       <AnimatePresence>
+        {(!data.nome && !data.lead_id) && (
+          <>
+            <motion.div
+              className="fixed inset-y-0 left-0 w-1/2 z-[100] border-r border-white/5"
+              style={{
+                background:
+                  'repeating-linear-gradient(90deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
+                boxShadow: 'inset -20px 0 50px rgba(0,0,0,0.5)'
+              }}
+              initial={{ x: 0 }}
+              animate={{ x: '-100%' }}
+              transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1], delay: 0.1 }}
+            />
+            <motion.div
+              className="fixed inset-y-0 right-0 w-1/2 z-[100] border-l border-white/5"
+              style={{
+                background:
+                  'repeating-linear-gradient(270deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
+                boxShadow: 'inset 20px 0 50px rgba(0,0,0,0.5)'
+              }}
+              initial={{ x: 0 }}
+              animate={{ x: '100%' }}
+              transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1], delay: 0.1 }}
+            />
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showRecovery && (
           <RecoveryModal
             onContinue={() => {

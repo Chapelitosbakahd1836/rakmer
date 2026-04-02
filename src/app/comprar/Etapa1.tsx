@@ -41,12 +41,6 @@ export default function Etapa1({ data, onNext }: Props) {
   const [whatsapp, setWhatsapp] = useState(data.whatsapp)
   const [errors, setErrors] = useState<Errors>({})
   const [loading, setLoading] = useState(false)
-  const [curtainsOpen, setCurtainsOpen] = useState(false)
-
-  useEffect(() => {
-    const t = setTimeout(() => setCurtainsOpen(true), 250)
-    return () => clearTimeout(t)
-  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -129,37 +123,12 @@ export default function Etapa1({ data, onNext }: Props) {
         }}
       />
 
-      {/* Circus curtains opening animation */}
-      <AnimatePresence>
-        {!curtainsOpen && (
-          <>
-            <motion.div
-              className="absolute inset-y-0 left-0 w-1/2 z-20"
-              style={{
-                background:
-                  'repeating-linear-gradient(90deg, #7a0000 0px, #7a0000 22px, #b01a24 22px, #b01a24 44px)',
-              }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
-            />
-            <motion.div
-              className="absolute inset-y-0 right-0 w-1/2 z-20"
-              style={{
-                background:
-                  'repeating-linear-gradient(270deg, #7a0000 0px, #7a0000 22px, #b01a24 22px, #b01a24 44px)',
-              }}
-              exit={{ x: '100%' }}
-              transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
-            />
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Form */}
       <motion.div
         initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: curtainsOpen ? 1 : 0, y: curtainsOpen ? 0 : 24 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">

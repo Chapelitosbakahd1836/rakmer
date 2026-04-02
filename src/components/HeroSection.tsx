@@ -28,7 +28,7 @@ export default function HeroSection({ whatsappUrl }: HeroSectionProps) {
   function handleBuyClick(e: React.MouseEvent) {
     e.preventDefault()
     setCurtaining(true)
-    setTimeout(() => router.push('/comprar'), 1400)
+    setTimeout(() => router.push('/comprar'), 1200)
   }
 
   return (
@@ -176,20 +176,22 @@ export default function HeroSection({ whatsappUrl }: HeroSectionProps) {
         {curtaining && (
           <>
             <motion.div
-              className="fixed inset-y-0 left-0 w-1/2 z-50"
+              className="fixed inset-y-0 left-0 w-1/2 z-50 border-r border-white/5"
               style={{
                 background:
-                  'repeating-linear-gradient(90deg, #7a0000 0px, #7a0000 24px, #b01a24 24px, #b01a24 48px)',
+                  'repeating-linear-gradient(90deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
+                boxShadow: 'inset -20px 0 50px rgba(0,0,0,0.5)'
               }}
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1] }}
             />
             <motion.div
-              className="fixed inset-y-0 right-0 w-1/2 z-50"
+              className="fixed inset-y-0 right-0 w-1/2 z-50 border-l border-white/5"
               style={{
                 background:
-                  'repeating-linear-gradient(270deg, #7a0000 0px, #7a0000 24px, #b01a24 24px, #b01a24 48px)',
+                  'repeating-linear-gradient(270deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
+                boxShadow: 'inset 20px 0 50px rgba(0,0,0,0.5)'
               }}
               initial={{ x: '100%' }}
               animate={{ x: 0 }}

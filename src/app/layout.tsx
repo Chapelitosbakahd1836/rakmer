@@ -14,6 +14,7 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'Ingressos Circo | Compre Online',
   description:
     'Compre seus ingressos para o circo online com segurança. Emoção, humor e acrobacias para toda a família. PIX, cartão de crédito e débito.',

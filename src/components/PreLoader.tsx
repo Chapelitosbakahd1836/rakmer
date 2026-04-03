@@ -38,12 +38,12 @@ export default function PreLoader({ onComplete }: PreLoaderProps) {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8, ease: "easeInOut" }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#E63946]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#B33257]"
     >
       {/* Content Container */}
       <div className="relative w-full h-full flex flex-col items-center justify-center px-4">
         {!isVideoLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#E63946] z-[60]">
+          <div className="absolute inset-0 flex items-center justify-center bg-[#B33257] z-[60]">
             <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
           </div>
         )}
@@ -73,19 +73,25 @@ export default function PreLoader({ onComplete }: PreLoaderProps) {
         </div>
 
         {/* Brand Text */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={isVideoLoaded ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.6, duration: 0.8 }}
-          className="mt-6 text-center"
-        >
-          <h2 className="text-white text-4xl sm:text-5xl font-playfair font-bold tracking-tight drop-shadow-lg">
+        <div className="mt-6 text-center space-y-2">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVideoLoaded ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }}
+            className="text-white text-4xl sm:text-5xl font-playfair font-bold tracking-tight drop-shadow-lg"
+          >
             Circo <span className="text-[#FFD700]">Rakmer</span>
-          </h2>
-          <p className="text-white/80 text-sm tracking-[0.3em] font-medium uppercase mt-3">
+          </motion.h2>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={isVideoLoaded ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 1.1, duration: 0.8, ease: "easeOut" }}
+            className="text-white/80 text-sm tracking-[0.3em] font-medium uppercase"
+          >
             O Espetáculo Vai Começar
-          </p>
-        </motion.div>
+          </motion.p>
+        </div>
       </div>
 
       {/* Skip Button */}

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Home, Users, Tent, Ticket, Megaphone, Settings } from 'lucide-react';
+import { Home, Users, Tent, Ticket, Megaphone } from 'lucide-react';
+import LogoutButton from './LogoutButton';
 
 export default function AdminSidebar() {
   const links = [
@@ -31,10 +32,7 @@ export default function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="p-6 border-t border-slate-800 text-sm flex items-center text-slate-500 cursor-pointer hover:text-white transition-colors">
-        <Settings className="w-4 h-4 mr-2" />
-        Configurações
-      </div>
+      <LogoutButton />
     </div>
   );
 }

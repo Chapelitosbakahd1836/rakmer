@@ -1,63 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import type { FunilData } from './FunilCompra'
 import type { Evento } from '@/lib/types'
 
 const WA_ESPERA = `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_SUPORTE}?text=Oi!%20Quero%20entrar%20na%20lista%20de%20espera%20para%20o%20pr%C3%B3ximo%20espet%C3%A1culo`
 
-function TwinklingStars() {
-  const [stars] = useState(() =>
-    Array.from({ length: 0 }, (_, i) => ({  // dots already on FunilCompra bg
-      id: i,
-      left: `${(i * 37 + 7) % 100}%`,
-      top: `${(i * 53 + 11) % 100}%`,
-      size: (i % 3) + 1.5,
-      delay: (i * 0.13) % 4,
-      duration: 1.5 + (i % 3) * 0.8,
-    }))
-  )
+const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
+const MONTHS_PT = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
 
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {stars.map((star) => (
-        <div
-          key={star.id}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: star.left,
-            top: star.top,
-            width: star.size,
-            height: star.size,
-            animation: `twinkle ${star.duration}s ease-in-out ${star.delay}s infinite`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function groupByMonth(eventos: Evento[]): Array<{ month: string; events: Evento[] }> {
-  const map = new Map<string, Evento[]>()
-  eventos.forEach((ev) => {
-    const d = new Date(ev.data_hora)
-    const key = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(ev)
-  })
-  return Array.from(map.entries()).map(([month, events]) => ({ month, events }))
-}
-
-function parseDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return {
-    day: d.getDate().toString().padStart(2, '0'),
-    weekday: d.toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase().replace('.', ''),
-    month: d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase().replace('.', ''),
-    time: d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-  }
+function getDayKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 interface Props {
@@ -66,7 +24,7 @@ interface Props {
   onBack: () => void
 }
 
-export default function Etapa2({ data, onNext, onBack }: Props) {
+export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
   const [eventos, setEventos] = useState<Evento[]>([])
   const [loadingEventos, setLoadingEventos] = useState(true)
   const [selected, setSelected] = useState<string | null>(
@@ -74,6 +32,11 @@ export default function Etapa2({ data, onNext, onBack }: Props) {
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [viewMonth, setViewMonth] = useState<{ year: number; month: number }>(() => {
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() }
+  })
 
   useEffect(() => {
     async function loadEventos() {
@@ -88,16 +51,55 @@ export default function Etapa2({ data, onNext, onBack }: Props) {
       const list = rows || []
       setEventos(list)
 
+      // Auto-select from URL slug
       if (data.espetaculo_id?.startsWith('slug:')) {
         const slug = data.espetaculo_id.replace('slug:', '')
         const match = list.find((e) => e.slug === slug)
-        if (match) setSelected(match.id)
+        if (match) {
+          setSelected(match.id)
+          const d = new Date(match.data_hora)
+          setSelectedDay(getDayKey(d))
+          setViewMonth({ year: d.getFullYear(), month: d.getMonth() })
+        }
+      } else if (data.espetaculo_id && list.length > 0) {
+        const match = list.find((e) => e.id === data.espetaculo_id)
+        if (match) {
+          const d = new Date(match.data_hora)
+          setSelectedDay(getDayKey(d))
+          setViewMonth({ year: d.getFullYear(), month: d.getMonth() })
+        }
+      }
+
+      // If no events this month, jump to first event's month
+      if (list.length > 0) {
+        const now2 = new Date()
+        const hasThisMonth = list.some((e) => {
+          const d = new Date(e.data_hora)
+          return d.getFullYear() === now2.getFullYear() && d.getMonth() === now2.getMonth()
+        })
+        if (!hasThisMonth) {
+          const first = new Date(list[0].data_hora)
+          setViewMonth({ year: first.getFullYear(), month: first.getMonth() })
+        }
       }
 
       setLoadingEventos(false)
     }
     loadEventos()
   }, [data.espetaculo_id])
+
+  // Map: YYYY-MM-DD → list of eventos
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, Evento[]>()
+    eventos.forEach((ev) => {
+      const key = getDayKey(new Date(ev.data_hora))
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(ev)
+    })
+    return map
+  }, [eventos])
+
+  const dayEvents = selectedDay ? (eventsByDay.get(selectedDay) || []) : []
 
   async function handleNext() {
     if (!selected || !data.lead_id) return
@@ -143,37 +145,84 @@ export default function Etapa2({ data, onNext, onBack }: Props) {
     }
   }
 
-  const grouped = groupByMonth(eventos)
+  // Calendar math
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const { year, month } = viewMonth
+  const firstDayOfWeek = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const todayKey = getDayKey(today)
+
+  const canGoPrev =
+    year > today.getFullYear() ||
+    (year === today.getFullYear() && month > today.getMonth())
+
+  function prevMonth() {
+    setViewMonth(({ year, month }) =>
+      month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }
+    )
+    setSelectedDay(null)
+  }
+
+  function nextMonth() {
+    setViewMonth(({ year, month }) =>
+      month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }
+    )
+    setSelectedDay(null)
+  }
+
+  function handleDayClick(day: number) {
+    const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const dayDate = new Date(year, month, day)
+    dayDate.setHours(0, 0, 0, 0)
+    if (dayDate < today) return
+    const evs = eventsByDay.get(key) || []
+    if (evs.length === 0) return
+
+    setSelectedDay(key)
+    // Auto-select if only one event
+    if (evs.length === 1) {
+      setSelected(evs[0].id)
+    } else {
+      setSelected(null)
+    }
+  }
 
   return (
-    <div
-      className="relative h-full flex flex-col overflow-hidden"
-      style={{ backgroundColor: 'transparent' }}
-    >
-      <TwinklingStars />
-
-      {/* Scrollable content */}
+    <div className="relative h-full flex flex-col overflow-hidden">
       <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain">
-        <div className="max-w-2xl mx-auto px-4 py-8 pb-4">
-          <div className="text-center mb-8">
+        <div className="max-w-lg mx-auto px-4 py-8 pb-4">
+
+          {/* Header */}
+          <div className="text-center mb-6">
             <div className="text-5xl mb-3">📅</div>
-            <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-white mb-1">
+            <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-white mb-3">
               Quando você quer{' '}
               <span style={{ color: '#FFD700' }}>viver essa magia?</span>
             </h2>
-            <p className="text-white/45 text-sm">Selecione o dia do espetáculo</p>
+
+            {/* Schedule info banner */}
+            <div
+              className="rounded-xl px-4 py-3"
+              style={{
+                backgroundColor: 'rgba(255,215,0,0.07)',
+                border: '1px solid rgba(255,215,0,0.22)',
+              }}
+            >
+              <p className="text-sm font-medium leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                🎭 <span style={{ color: '#FFD700' }}>Segunda a Sexta</span> — espetáculos às <strong className="text-white">20:30</strong>
+              </p>
+              <p className="text-sm font-medium leading-relaxed mt-0.5" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                🎪 <span style={{ color: '#FFD700' }}>Sábado, Domingo e Feriados</span> — às <strong className="text-white">18:00</strong> e <strong className="text-white">20:30</strong>
+              </p>
+            </div>
           </div>
 
           {loadingEventos ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-32 rounded-xl animate-pulse"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
-                />
-              ))}
-            </div>
+            <div
+              className="h-80 rounded-2xl animate-pulse"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+            />
           ) : eventos.length === 0 ? (
             <div className="text-center py-14">
               <div className="text-5xl mb-4">🎪</div>
@@ -192,89 +241,231 @@ export default function Etapa2({ data, onNext, onBack }: Props) {
               </a>
             </div>
           ) : (
-            grouped.map(({ month, events }) => (
-              <div key={month} className="mb-7">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-white/35 mb-3 capitalize">
-                  {month}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {events.map((ev) => {
-                    const { day, weekday, month: mon, time } = parseDate(ev.data_hora)
-                    const isSelected = selected === ev.id
-                    const ocupPct =
-                      ev.lugares_total > 0
-                        ? ((ev.lugares_total - ev.lugares_disponiveis) / ev.lugares_total) * 100
-                        : 0
-                    const quaseEsgotado =
-                      ev.lugares_total > 0 && ev.lugares_disponiveis < ev.lugares_total * 0.2
+            <>
+              {/* Calendar card */}
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  border: '1.5px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                {/* Month navigation */}
+                <div
+                  className="flex items-center justify-between px-5 py-4"
+                  style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <button
+                    onClick={prevMonth}
+                    disabled={!canGoPrev}
+                    className="w-9 h-9 flex items-center justify-center rounded-full transition-all disabled:opacity-20 hover:bg-white/10"
+                  >
+                    <span className="text-white text-xl leading-none">‹</span>
+                  </button>
+                  <span className="font-semibold text-white">
+                    {MONTHS_PT[month]} {year}
+                  </span>
+                  <button
+                    onClick={nextMonth}
+                    className="w-9 h-9 flex items-center justify-center rounded-full transition-all hover:bg-white/10"
+                  >
+                    <span className="text-white text-xl leading-none">›</span>
+                  </button>
+                </div>
+
+                {/* Weekday headers */}
+                <div className="grid grid-cols-7 px-3 pt-4 pb-1">
+                  {WEEKDAYS.map((w) => (
+                    <div key={w} className="flex justify-center">
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: 'rgba(255,255,255,0.28)' }}
+                      >
+                        {w}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Day cells */}
+                <div className="grid grid-cols-7 gap-1 px-3 pb-4">
+                  {/* Empty offset cells */}
+                  {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                    <div key={`empty-${i}`} />
+                  ))}
+
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day = i + 1
+                    const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                    const dayDate = new Date(year, month, day)
+                    dayDate.setHours(0, 0, 0, 0)
+                    const isPast = dayDate < today
+                    const isToday = key === todayKey
+                    const hasEvents = eventsByDay.has(key)
+                    const isSelectedDay = selectedDay === key
+                    const dayEvs = eventsByDay.get(key) || []
+                    const almostFull = dayEvs.some(
+                      (e) =>
+                        e.lugares_total > 0 &&
+                        e.lugares_disponiveis < e.lugares_total * 0.2
+                    )
 
                     return (
-                      <motion.button
-                        key={ev.id}
-                        onClick={() => setSelected(ev.id)}
-                        whileTap={{ scale: 0.96 }}
-                        className="relative p-4 rounded-xl text-left transition-all duration-200"
+                      <button
+                        key={day}
+                        onClick={() => handleDayClick(day)}
+                        disabled={isPast || !hasEvents}
+                        className="relative flex flex-col items-center justify-center rounded-xl aspect-square transition-all duration-150"
                         style={{
-                          backgroundColor: isSelected
-                            ? 'rgba(255,215,0,0.12)'
-                            : 'rgba(255,255,255,0.05)',
-                          border: `2px solid ${isSelected ? '#FFD700' : 'rgba(255,255,255,0.1)'}`,
-                          boxShadow: isSelected ? '0 0 18px rgba(255,215,0,0.2)' : 'none',
+                          opacity: isPast ? 0.18 : !hasEvents ? 0.35 : 1,
+                          backgroundColor: isSelectedDay
+                            ? 'rgba(255,215,0,0.18)'
+                            : hasEvents && !isPast
+                            ? 'rgba(255,215,0,0.06)'
+                            : 'transparent',
+                          border: isSelectedDay
+                            ? '2px solid #FFD700'
+                            : hasEvents && !isPast
+                            ? '1.5px solid rgba(255,215,0,0.28)'
+                            : isToday
+                            ? '1.5px solid rgba(255,255,255,0.2)'
+                            : '1.5px solid transparent',
+                          cursor: isPast || !hasEvents ? 'default' : 'pointer',
+                          boxShadow: isSelectedDay
+                            ? '0 0 16px rgba(255,215,0,0.22)'
+                            : 'none',
                         }}
                       >
-                        {isSelected && (
-                          <div
-                            className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-xs font-black"
-                            style={{ backgroundColor: '#FFD700', color: '#000' }}
-                          >
-                            ✓
-                          </div>
-                        )}
-                        {quaseEsgotado && !isSelected && (
-                          <div className="mb-1.5">
-                            <span
-                              className="text-xs font-bold animate-pulse"
-                              style={{ color: '#E63946' }}
-                            >
-                              🔥 ESGOTANDO
-                            </span>
+                        <span
+                          className="text-sm leading-none"
+                          style={{
+                            fontWeight: isToday || isSelectedDay ? 800 : hasEvents ? 700 : 500,
+                            color: isSelectedDay
+                              ? '#FFD700'
+                              : hasEvents && !isPast
+                              ? 'white'
+                              : 'rgba(255,255,255,0.45)',
+                          }}
+                        >
+                          {day}
+                        </span>
+
+                        {/* Dots indicating shows */}
+                        {hasEvents && !isPast && (
+                          <div className="flex gap-0.5 mt-1">
+                            {dayEvs.slice(0, 2).map((_, di) => (
+                              <div
+                                key={di}
+                                className="w-1 h-1 rounded-full"
+                                style={{
+                                  backgroundColor: almostFull ? '#E63946' : '#FFD700',
+                                }}
+                              />
+                            ))}
                           </div>
                         )}
 
-                        <div>
-                          <div className="text-2xl font-bold text-white leading-none">{day}</div>
-                          <div className="text-xs text-white/50 mt-0.5">
-                            {weekday} · {mon}
-                          </div>
+                        {/* Red dot for almost-full */}
+                        {almostFull && !isPast && (
                           <div
-                            className="text-sm font-bold mt-2"
-                            style={{ color: '#FFD700' }}
-                          >
-                            {time}h
-                          </div>
-                          <div className="text-xs text-white/35 mt-0.5">{ev.cidade}</div>
-                        </div>
-
-                        <div className="mt-3">
-                          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${ocupPct}%`,
-                                backgroundColor: quaseEsgotado ? '#E63946' : '#FFD700',
-                              }}
-                            />
-                          </div>
-                          <div className="text-xs text-white/25 mt-1">
-                            {ev.lugares_disponiveis} disponíveis
-                          </div>
-                        </div>
-                      </motion.button>
+                            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
+                            style={{ backgroundColor: '#E63946', boxShadow: '0 0 4px #E63946' }}
+                          />
+                        )}
+                      </button>
                     )
                   })}
                 </div>
               </div>
-            ))
+
+              {/* Legend */}
+              <div className="flex items-center gap-5 mt-3 px-1">
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="w-3 h-3 rounded-sm"
+                    style={{
+                      backgroundColor: 'rgba(255,215,0,0.12)',
+                      border: '1.5px solid rgba(255,215,0,0.4)',
+                    }}
+                  />
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                    Show disponível
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: '#E63946', boxShadow: '0 0 4px #E63946' }}
+                  />
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                    Esgotando
+                  </span>
+                </div>
+              </div>
+
+              {/* Time picker — appears when a day is clicked */}
+              <AnimatePresence>
+                {selectedDay && dayEvents.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 12 }}
+                    className="mt-5"
+                  >
+                    <p
+                      className="text-xs font-semibold uppercase tracking-wider mb-3"
+                      style={{ color: 'rgba(255,255,255,0.4)' }}
+                    >
+                      Escolha o horário:
+                    </p>
+                    <div className="flex gap-3 flex-wrap">
+                      {dayEvents.map((ev) => {
+                        const time = new Date(ev.data_hora).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                        const isSelected = selected === ev.id
+                        const quaseEsgotado =
+                          ev.lugares_total > 0 &&
+                          ev.lugares_disponiveis < ev.lugares_total * 0.2
+
+                        return (
+                          <button
+                            key={ev.id}
+                            onClick={() => setSelected(ev.id)}
+                            className="flex flex-col items-center px-6 py-4 rounded-xl transition-all duration-150 hover:scale-[1.02]"
+                            style={{
+                              backgroundColor: isSelected
+                                ? 'rgba(255,215,0,0.15)'
+                                : 'rgba(255,255,255,0.06)',
+                              border: `2px solid ${isSelected ? '#FFD700' : 'rgba(255,255,255,0.1)'}`,
+                              boxShadow: isSelected
+                                ? '0 0 16px rgba(255,215,0,0.22)'
+                                : 'none',
+                            }}
+                          >
+                            <span
+                              className="font-bold text-2xl"
+                              style={{ color: isSelected ? '#FFD700' : 'white' }}
+                            >
+                              {time}h
+                            </span>
+                            <span
+                              className="text-xs mt-1"
+                              style={{ color: quaseEsgotado ? '#E63946' : 'rgba(255,255,255,0.35)' }}
+                            >
+                              {quaseEsgotado
+                                ? '🔥 Esgotando!'
+                                : `${ev.lugares_disponiveis} disponíveis`}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
           )}
 
           {error && (
@@ -295,7 +486,7 @@ export default function Etapa2({ data, onNext, onBack }: Props) {
             backdropFilter: 'blur(8px)',
           }}
         >
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-lg mx-auto">
             <button
               onClick={handleNext}
               disabled={!selected || saving}
@@ -305,8 +496,20 @@ export default function Etapa2({ data, onNext, onBack }: Props) {
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.25" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeOpacity="0.25"
+                    />
+                    <path
+                      d="M12 2a10 10 0 0 1 10 10"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
                   </svg>
                   Salvando...
                 </span>

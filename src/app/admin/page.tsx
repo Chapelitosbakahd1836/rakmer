@@ -5,9 +5,18 @@ import SalesChartWidget from './components/SalesChartWidget';
 import UpcomingShowsWidget from './components/UpcomingShowsWidget';
 import LiveSalesWidget from './components/LiveSalesWidget';
 import AlertsWidget from './components/AlertsWidget';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
-export default function AdminDashboardPage() {
-  const adminName = "Admin"; // No futuro pode vir do auth
+export default async function AdminDashboardPage() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/admin/login');
+  }
+
+  const adminName = user.email || "Admin"; // No futuro pode vir do auth
 
   return (
     <div className="max-w-7xl mx-auto">

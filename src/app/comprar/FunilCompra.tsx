@@ -91,12 +91,12 @@ function ProgressBar({ currentStep }: { currentStep: Step }) {
                       backgroundColor: isCompleted
                         ? '#FFD700'
                         : isActive
-                        ? '#E63946'
+                        ? '#FF4F7B'
                         : 'rgba(255,255,255,0.12)',
                       color: isCompleted ? '#000' : isActive ? 'white' : 'rgba(255,255,255,0.35)',
                       transform: isActive ? 'scale(1.2)' : 'scale(1)',
                       boxShadow: isActive
-                        ? '0 0 14px rgba(230,57,70,0.6)'
+                        ? '0 0 14px rgba(255,79,123,0.65)'
                         : isCompleted
                         ? '0 0 10px rgba(255,215,0,0.4)'
                         : 'none',
@@ -168,7 +168,7 @@ function RecoveryModal({ onContinue, onClose }: { onContinue: () => void; onClos
         <button
           onClick={onContinue}
           className="w-full py-4 rounded-xl font-bold text-white text-base mb-3 transition-all hover:scale-[1.02]"
-          style={{ backgroundColor: '#E63946', boxShadow: '0 0 20px rgba(230,57,70,0.35)' }}
+          style={{ backgroundColor: '#FF4F7B', boxShadow: '0 0 20px rgba(255,79,123,0.4)' }}
         >
           🔒 Retomar Compra
         </button>

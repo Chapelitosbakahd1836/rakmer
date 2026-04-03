@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 
-const WORDS = ['A', 'Magia', 'do', 'Circo', 'Ao', 'Vivo']
+const TITLE_LINE1 = ['O', 'melhor', 'circo', 'do', 'brasil', 'chegooouu']
 
 // Deterministic yellow dots (no hydration mismatch)
 const DOTS = Array.from({ length: 70 }, (_, i) => ({
@@ -19,9 +19,10 @@ const DOTS = Array.from({ length: 70 }, (_, i) => ({
 
 interface HeroSectionProps {
   whatsappUrl: string
+  cidade: string
 }
 
-export default function HeroSection({ whatsappUrl }: HeroSectionProps) {
+export default function HeroSection({ whatsappUrl, cidade }: HeroSectionProps) {
   const router = useRouter()
   const [curtaining, setCurtaining] = useState(false)
 
@@ -108,29 +109,38 @@ export default function HeroSection({ whatsappUrl }: HeroSectionProps) {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full text-sm font-semibold"
           style={{
-            backgroundColor: 'rgba(230,57,70,0.2)',
-            border: '1px solid rgba(230,57,70,0.5)',
-            color: '#ff8fa0',
+            backgroundColor: 'rgba(255,215,0,0.15)',
+            border: '1px solid rgba(255,215,0,0.5)',
+            color: '#FFD700',
           }}
         >
           <span className="animate-bounce">📍</span>
-          Pompéia-SP • Curta temporada!!!
+          {cidade} • Curta temporada!!!
         </motion.div>
 
         {/* Title — word by word */}
         <h1 className="font-playfair font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white mb-6 leading-tight">
-          {WORDS.map((word, i) => (
+          {TITLE_LINE1.map((word, i) => (
             <motion.span
               key={i}
-              className="inline-block mr-[0.3em] last:mr-0"
+              className="inline-block mr-[0.3em]"
               initial={{ opacity: 0, y: 32 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 + i * 0.14, duration: 0.45, ease: 'easeOut' }}
-              style={word === 'Circo' ? { color: '#E63946' } : {}}
             >
               {word}
             </motion.span>
           ))}
+          <br />
+          <motion.span
+            className="inline-block"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 + TITLE_LINE1.length * 0.14, duration: 0.5, ease: 'easeOut' }}
+            style={{ color: '#FFD700' }}
+          >
+            {cidade}!!!
+          </motion.span>
         </h1>
 
         {/* Subtitle */}
@@ -152,8 +162,8 @@ export default function HeroSection({ whatsappUrl }: HeroSectionProps) {
         >
           <button
             onClick={handleBuyClick}
-            className="w-full sm:w-auto px-8 py-4 rounded-full text-lg font-bold text-white shadow-2xl transition-all duration-200 hover:scale-105 text-center"
-            style={{ backgroundColor: '#E63946', boxShadow: '0 0 30px rgba(230,57,70,0.45)' }}
+            className="w-full sm:w-auto px-8 py-4 rounded-full text-lg font-bold text-black shadow-2xl transition-all duration-200 hover:scale-105 text-center"
+            style={{ backgroundColor: '#FFD700', boxShadow: '0 0 30px rgba(255,215,0,0.5)' }}
           >
             🎪 Garantir Meu Ingresso Agora
           </button>

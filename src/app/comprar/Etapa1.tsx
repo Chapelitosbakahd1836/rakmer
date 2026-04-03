@@ -107,7 +107,7 @@ export default function Etapa1({ data, onNext }: Props) {
 
   const inputStyle = (hasError: boolean) => ({
     backgroundColor: 'rgba(0,0,0,0.3)',
-    border: `1.5px solid ${hasError ? '#E63946' : 'rgba(255,255,255,0.2)'}`,
+    border: `1.5px solid ${hasError ? '#FF4F7B' : 'rgba(255,255,255,0.2)'}`,
     transition: 'border-color 0.2s',
   })
 
@@ -233,10 +233,10 @@ export default function Etapa1({ data, onNext }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl font-bold text-white text-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="w-full py-4 rounded-xl font-bold text-black text-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             style={{
-              backgroundColor: '#E63946',
-              boxShadow: loading ? 'none' : '0 0 28px rgba(230,57,70,0.4)',
+              backgroundColor: '#FFD700',
+              boxShadow: loading ? 'none' : '0 0 28px rgba(255,215,0,0.45)',
             }}
           >
             {loading ? (

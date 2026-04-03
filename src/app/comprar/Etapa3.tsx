@@ -147,7 +147,7 @@ export default function Etapa3({ data, onBack }: Props) {
           <div className="text-center mb-7">
             <div className="text-5xl mb-3">🎪</div>
             <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-white mb-1">
-              Onde você quer <span style={{ color: '#E63946' }}>sentar?</span>
+              Onde você quer <span style={{ color: '#FFD700' }}>sentar?</span>
             </h2>
             {data.espetaculo_nome && (
               <p className="text-white/45 text-sm">{data.espetaculo_nome}</p>
@@ -213,7 +213,7 @@ export default function Etapa3({ data, onBack }: Props) {
                           {quase && (
                             <span
                               className="text-xs font-bold animate-pulse"
-                              style={{ color: '#E63946' }}
+                              style={{ color: '#FF4F7B' }}
                             >
                               🔥 QUASE ESGOTADO
                             </span>
@@ -270,7 +270,7 @@ export default function Etapa3({ data, onBack }: Props) {
                           className="h-full rounded-full"
                           style={{
                             width: `${ocupPct}%`,
-                            backgroundColor: quase ? '#E63946' : '#22c55e',
+                            backgroundColor: quase ? '#FF4F7B' : '#22c55e',
                           }}
                         />
                       </div>
@@ -322,8 +322,8 @@ export default function Etapa3({ data, onBack }: Props) {
             <button
               onClick={handleCheckout}
               disabled={saving}
-              className="w-full py-4 rounded-xl font-bold text-white text-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#E63946' }}
+              className="w-full py-4 rounded-xl font-bold text-black text-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#FFD700', boxShadow: '0 0 28px rgba(255,215,0,0.4)' }}
             >
               {saving ? (
                 <span className="flex items-center justify-center gap-2">

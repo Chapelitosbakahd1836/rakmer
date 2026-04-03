@@ -102,26 +102,29 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
   const dayEvents = selectedDay ? (eventsByDay.get(selectedDay) || []) : []
 
   async function handleNext() {
-    if (!selected || !data.lead_id) return
+    if (!selected) return
     const ev = eventos.find((e) => e.id === selected)
     if (!ev) return
 
     setSaving(true)
     setError(null)
     try {
-      const { error: dbErr } = await supabase
-        .from('leads')
-        .update({
-          espetaculo_id: selected,
-          funil_step: 2,
-          funil_step_nome: 'data_escolhida',
-        })
-        .eq('id', data.lead_id)
+      // Only update DB if we have a real lead_id (not local fallback)
+      if (data.lead_id && !data.lead_id.startsWith('local_')) {
+        const { error: dbErr } = await supabase
+          .from('leads')
+          .update({
+            espetaculo_id: selected,
+            funil_step: 2,
+            funil_step_nome: 'data_escolhida',
+          })
+          .eq('id', data.lead_id)
 
-      if (dbErr) throw dbErr
+        if (dbErr) throw dbErr
+      }
 
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_TRACKING
-      if (webhookUrl) {
+      if (webhookUrl && data.lead_id) {
         fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -317,34 +320,38 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
                         disabled={isPast || !hasEvents}
                         className="relative flex flex-col items-center justify-center rounded-xl aspect-square transition-all duration-150"
                         style={{
-                          opacity: isPast ? 0.18 : !hasEvents ? 0.35 : 1,
+                          opacity: isPast ? 0.2 : !hasEvents ? 0.4 : 1,
                           backgroundColor: isSelectedDay
-                            ? 'rgba(255,215,0,0.18)'
+                            ? 'rgba(255,215,0,0.3)'
                             : hasEvents && !isPast
-                            ? 'rgba(255,215,0,0.06)'
+                            ? 'rgba(255,215,0,0.16)'
                             : 'transparent',
                           border: isSelectedDay
                             ? '2px solid #FFD700'
                             : hasEvents && !isPast
-                            ? '1.5px solid rgba(255,215,0,0.28)'
+                            ? '1.5px solid rgba(255,215,0,0.55)'
                             : isToday
-                            ? '1.5px solid rgba(255,255,255,0.2)'
+                            ? '1.5px solid rgba(255,255,255,0.25)'
                             : '1.5px solid transparent',
                           cursor: isPast || !hasEvents ? 'default' : 'pointer',
                           boxShadow: isSelectedDay
-                            ? '0 0 16px rgba(255,215,0,0.22)'
+                            ? '0 0 20px rgba(255,215,0,0.35)'
+                            : hasEvents && !isPast
+                            ? '0 0 8px rgba(255,215,0,0.12)'
                             : 'none',
                         }}
                       >
                         <span
                           className="text-sm leading-none"
                           style={{
-                            fontWeight: isToday || isSelectedDay ? 800 : hasEvents ? 700 : 500,
+                            fontWeight: isToday || isSelectedDay ? 800 : hasEvents ? 700 : 400,
                             color: isSelectedDay
                               ? '#FFD700'
                               : hasEvents && !isPast
-                              ? 'white'
-                              : 'rgba(255,255,255,0.45)',
+                              ? '#FFFFFF'
+                              : isPast
+                              ? 'rgba(255,255,255,0.3)'
+                              : 'rgba(255,255,255,0.35)',
                           }}
                         >
                           {day}
@@ -358,7 +365,7 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
                                 key={di}
                                 className="w-1 h-1 rounded-full"
                                 style={{
-                                  backgroundColor: almostFull ? '#E63946' : '#FFD700',
+                                  backgroundColor: almostFull ? '#FF4F7B' : '#FFD700',
                                 }}
                               />
                             ))}
@@ -369,7 +376,7 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
                         {almostFull && !isPast && (
                           <div
                             className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
-                            style={{ backgroundColor: '#E63946', boxShadow: '0 0 4px #E63946' }}
+                            style={{ backgroundColor: '#FF4F7B', boxShadow: '0 0 4px #FF4F7B' }}
                           />
                         )}
                       </button>
@@ -395,7 +402,7 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
                 <div className="flex items-center gap-1.5">
                   <div
                     className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: '#E63946', boxShadow: '0 0 4px #E63946' }}
+                    style={{ backgroundColor: '#FF4F7B', boxShadow: '0 0 4px #FF4F7B' }}
                   />
                   <span className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>
                     Esgotando
@@ -452,7 +459,7 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
                             </span>
                             <span
                               className="text-xs mt-1"
-                              style={{ color: quaseEsgotado ? '#E63946' : 'rgba(255,255,255,0.35)' }}
+                              style={{ color: quaseEsgotado ? '#FF4F7B' : 'rgba(255,255,255,0.35)' }}
                             >
                               {quaseEsgotado
                                 ? '🔥 Esgotando!'
@@ -490,8 +497,8 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
             <button
               onClick={handleNext}
               disabled={!selected || saving}
-              className="w-full py-4 rounded-xl font-bold text-white text-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#E63946' }}
+              className="w-full py-4 rounded-xl font-bold text-black text-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#FFD700', boxShadow: '0 0 24px rgba(255,215,0,0.35)' }}
             >
               {saving ? (
                 <span className="flex items-center justify-center gap-2">

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { Megaphone, Send, Users, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-const fetcher = (url) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function RemarketingPage() {
   const { data: dashData } = useSWR('/api/admin/dashboard', fetcher);

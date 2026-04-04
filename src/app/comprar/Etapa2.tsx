@@ -38,18 +38,23 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
     return { year: now.getFullYear(), month: now.getMonth() }
   })
 
+  const [configs, setConfigs] = useState<Record<string, string>>({})
+
   useEffect(() => {
     async function loadEventos() {
       const now = new Date().toISOString()
-      const { data: rows } = await supabase
-        .from('espetaculos')
-        .select('*')
-        .eq('status', 'publicado')
-        .gte('data_hora', now)
-        .order('data_hora', { ascending: true })
+      
+      const [espRes, confRes] = await Promise.all([
+        supabase.from('espetaculos').select('*').eq('status', 'publicado').gte('data_hora', now).order('data_hora', { ascending: true }),
+        supabase.from('configuracoes').select('*')
+      ])
 
-      const list = rows || []
+      const list = espRes.data || []
       setEventos(list)
+      
+      const cMap: Record<string, string> = {}
+      confRes.data?.forEach(r => cMap[r.chave] = r.valor)
+      setConfigs(cMap)
 
       // Auto-select from URL slug
       if (data.espetaculo_id?.startsWith('slug:')) {
@@ -213,10 +218,10 @@ export default function Etapa2({ data, onNext, onBack: _onBack }: Props) {
               }}
             >
               <p className="text-sm font-medium leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                🎭 <span style={{ color: '#FFD700' }}>Segunda a Sexta</span> — espetáculos às <strong className="text-white">20:30</strong>
+                🎭 <span style={{ color: '#FFD700' }}>Segunda a Sexta</span> — espetáculos às <strong className="text-white">{configs.horarios_semana || '20:30'}</strong>
               </p>
               <p className="text-sm font-medium leading-relaxed mt-0.5" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                🎪 <span style={{ color: '#FFD700' }}>Sábado, Domingo e Feriados</span> — às <strong className="text-white">18:00</strong> e <strong className="text-white">20:30</strong>
+                🎪 <span style={{ color: '#FFD700' }}>Sábado, Domingo e Feriados</span> — às <strong className="text-white">{(configs.horarios_fds || '18:00, 20:30').replace(/,/g, ' e ')}</strong>
               </p>
             </div>
           </div>

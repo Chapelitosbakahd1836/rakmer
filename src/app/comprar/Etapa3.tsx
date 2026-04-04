@@ -33,7 +33,9 @@ interface Props {
 export default function Etapa3({ data, onBack }: Props) {
   const [tipos, setTipos] = useState<TipoIngresso[]>([])
   const [loadingTipos, setLoadingTipos] = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>(data.tipo_ingresso_id)
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(
+    data.tipo_ingresso_id ? `${data.tipo_ingresso_id}-${data.meia_entrada ? 'meia' : 'inteira'}` : null
+  )
   const [quantidade, setQuantidade] = useState(data.quantidade || 1)
   const [saving, setSaving] = useState(false)
   const [statusText, setStatusText] = useState('')
@@ -49,17 +51,40 @@ export default function Etapa3({ data, onBack }: Props) {
       .then(({ data: rows }) => {
         const list = rows || []
         setTipos(list)
-        if (list.length > 0 && !selectedId) setSelectedId(list[0].id)
+        if (list.length > 0 && !selectedOptionId) {
+          setSelectedOptionId(`${list[0].id}-inteira`)
+        }
         setLoadingTipos(false)
       })
-  }, [data.espetaculo_id, selectedId])
+  }, [data.espetaculo_id, selectedOptionId])
 
-  const selected = tipos.find((t) => t.id === selectedId)
-  const maxQtd = selected ? Math.min(10, selected.lugares_disponiveis) : 1
-  const total = selected ? selected.preco * quantidade : 0
+  const options = useMemo(() => {
+    const list: Array<TipoIngresso & { optionId: string; isMeia: boolean; displayPreco: number; label: string }> = []
+    tipos.forEach((t) => {
+      list.push({
+        ...t,
+        optionId: `${t.id}-inteira`,
+        isMeia: false,
+        label: `${t.nome} (Inteira)`,
+        displayPreco: t.preco,
+      })
+      list.push({
+        ...t,
+        optionId: `${t.id}-meia`,
+        isMeia: true,
+        label: `${t.nome} (Meia-Entrada)`,
+        displayPreco: t.preco / 2,
+      })
+    })
+    return list
+  }, [tipos])
+
+  const selectedOption = options.find((o) => o.optionId === selectedOptionId)
+  const maxQtd = selectedOption ? Math.min(10, selectedOption.lugares_disponiveis) : 1
+  const total = selectedOption ? selectedOption.displayPreco * quantidade : 0
 
   async function handleCheckout() {
-    if (!selected || !data.lead_id) return
+    if (!selectedOption || !data.lead_id) return
     setSaving(true)
     setError(null)
     setStatusText('Salvando sua seleção...')
@@ -68,7 +93,7 @@ export default function Etapa3({ data, onBack }: Props) {
       await supabase
         .from('leads')
         .update({
-          tipo_ingresso_id: selected.id,
+          tipo_ingresso_id: selectedOption.id,
           quantidade,
           funil_step: 3,
           funil_step_nome: 'lugar_escolhido',
@@ -83,7 +108,7 @@ export default function Etapa3({ data, onBack }: Props) {
           body: JSON.stringify({
             evento: 'funil_step3_completo',
             lead_id: data.lead_id,
-            tipo_ingresso_id: selected.id,
+            tipo_ingresso_id: selectedOption.id,
             quantidade,
             valor_total: total,
           }),
@@ -95,14 +120,15 @@ export default function Etapa3({ data, onBack }: Props) {
       const result = await criarCheckoutSession({
         lead_id: data.lead_id,
         espetaculo_id: data.espetaculo_id!,
-        tipo_ingresso_id: selected.id,
-        tipo_nome: selected.nome,
+        tipo_ingresso_id: selectedOption.id,
+        tipo_nome: selectedOption.nome,
         quantidade,
-        preco_unitario: selected.preco,
+        preco_unitario: selectedOption.displayPreco,
         nome: data.nome,
         email: data.email,
         whatsapp: data.whatsapp,
         espetaculo_nome: data.espetaculo_nome || '',
+        meia_entrada: selectedOption.isMeia,
       })
 
       if (result.error) {
@@ -170,8 +196,8 @@ export default function Etapa3({ data, onBack }: Props) {
             </div>
           ) : (
             <div className="space-y-3">
-              {tipos.map((tipo) => {
-                const isSelected = selectedId === tipo.id
+              {options.map((tipo) => {
+                const isSelected = selectedOptionId === tipo.optionId
                 const pct = tipo.preco_original
                   ? calcDesconto(tipo.preco_original, tipo.preco)
                   : null
@@ -183,9 +209,9 @@ export default function Etapa3({ data, onBack }: Props) {
 
                 return (
                   <motion.button
-                    key={tipo.id}
+                    key={tipo.optionId}
                     onClick={() => {
-                      setSelectedId(tipo.id)
+                      setSelectedOptionId(tipo.optionId)
                       setQuantidade(1)
                     }}
                     whileTap={{ scale: 0.99 }}
@@ -201,7 +227,7 @@ export default function Etapa3({ data, onBack }: Props) {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-bold text-white text-xl">{tipo.nome}</h3>
+                          <h3 className="font-bold text-white text-xl">{tipo.label}</h3>
                           {pct && (
                             <span
                               className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
@@ -225,11 +251,11 @@ export default function Etapa3({ data, onBack }: Props) {
                         <div className="flex items-center gap-2">
                           {tipo.preco_original && (
                             <span className="text-white/30 text-sm line-through">
-                              {formatPrice(tipo.preco_original)}
+                              {formatPrice(tipo.isMeia ? tipo.preco_original / 2 : tipo.preco_original)}
                             </span>
                           )}
                           <span className="font-bold text-2xl" style={{ color: '#FFD700' }}>
-                            {formatPrice(tipo.preco)}
+                            {formatPrice(tipo.displayPreco)}
                           </span>
                           <span className="text-white/35 text-xs">/ por pessoa</span>
                         </div>
@@ -296,7 +322,7 @@ export default function Etapa3({ data, onBack }: Props) {
       </div>
 
       {/* Bottom summary + CTA */}
-      {selected && (
+      {selectedOption && (
         <div
           className="relative z-10 p-4 border-t flex-shrink-0"
           style={{
@@ -309,7 +335,7 @@ export default function Etapa3({ data, onBack }: Props) {
             {/* Summary row */}
             <div className="flex items-center justify-between mb-2">
               <div className="text-white/55 text-sm">
-                {selected.nome} × {quantidade}
+                {selectedOption.label} × {quantidade}
               </div>
               <div className="font-bold text-2xl text-white">{formatPrice(total)}</div>
             </div>

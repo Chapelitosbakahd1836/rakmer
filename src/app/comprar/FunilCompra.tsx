@@ -68,6 +68,7 @@ export interface FunilData {
   tipo_nome: string | null
   quantidade: number
   preco_unitario: number
+  meia_entrada?: boolean
 }
 
 function ProgressBar({ currentStep }: { currentStep: Step }) {
@@ -205,6 +206,7 @@ export default function FunilCompra() {
     tipo_nome: null,
     quantidade: 1,
     preco_unitario: 0,
+    meia_entrada: false,
   })
 
   useEffect(() => {

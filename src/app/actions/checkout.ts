@@ -25,6 +25,7 @@ interface CheckoutInput {
   email: string
   whatsapp: string
   espetaculo_nome: string
+  meia_entrada?: boolean
 }
 
 export async function criarCheckoutSession(
@@ -64,6 +65,8 @@ export async function criarCheckoutSession(
     clienteId = novo?.id ?? null
   }
 
+  const finalPreco = input.meia_entrada ? tipo.preco / 2 : tipo.preco
+
   // 3. Create pending ingressos
   const ingressosPayload = Array.from({ length: input.quantidade }, () => ({
     lead_id: input.lead_id.startsWith('local_') ? null : input.lead_id,
@@ -71,7 +74,7 @@ export async function criarCheckoutSession(
     tipo_ingresso_id: input.tipo_ingresso_id,
     cliente_id: clienteId,
     status: 'pendente',
-    preco_pago: tipo.preco,
+    preco_pago: finalPreco,
   }))
 
   const { data: ingressosCriados } = await db
@@ -95,10 +98,10 @@ export async function criarCheckoutSession(
         price_data: {
           currency: 'brl',
           product_data: {
-            name: `${input.tipo_nome} — ${input.espetaculo_nome}`,
+            name: `${input.tipo_nome}${input.meia_entrada ? ' (Meia Entrada)' : ''} — ${input.espetaculo_nome}`,
             description: `Ingresso para ${input.espetaculo_nome}. Enviado pelo WhatsApp após confirmação.`,
           },
-          unit_amount: Math.round(tipo.preco * 100),
+          unit_amount: Math.round(finalPreco * 100),
         },
         quantity: input.quantidade,
       },
@@ -151,7 +154,7 @@ export async function criarCheckoutSession(
         evento: 'checkout_criado',
         lead_id: input.lead_id,
         stripe_session_id: session.id,
-        valor_total: tipo.preco * input.quantidade,
+        valor_total: finalPreco * input.quantidade,
       }),
     }).catch(() => {})
   }

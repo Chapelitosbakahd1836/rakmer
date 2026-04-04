@@ -60,11 +60,12 @@ export default function Etapa1({ data, onNext }: Props) {
     setLoading(true)
 
     // Try to save to Supabase — if it fails, use a local UUID and continue anyway
-    let leadId: string
+    let leadId = generateUUID()
     try {
-      const { data: lead, error } = await supabase
+      const { error } = await supabase
         .from('leads')
         .insert({
+          id: leadId,
           nome,
           email,
           whatsapp,
@@ -76,14 +77,11 @@ export default function Etapa1({ data, onNext }: Props) {
           funil_step_nome: 'dados_preenchidos',
           status: 'novo',
         })
-        .select('id')
-        .single()
 
       if (error) throw error
-      leadId = lead.id
     } catch (err) {
       console.error('[Etapa1] Supabase save failed, using local fallback:', err)
-      leadId = 'local_' + generateUUID()
+      leadId = 'local_' + leadId
     }
 
     sessionStorage.setItem('lead_id', leadId)

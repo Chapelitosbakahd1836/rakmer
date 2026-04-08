@@ -21,6 +21,6 @@ CREATE TABLE IF NOT EXISTS atividades_cliente (
 
 ALTER TABLE atividades_cliente ENABLE ROW LEVEL SECURITY;
 
--- Permite service_role ler/escrever atividades (n8n usa service_role via postgres direct)
-CREATE POLICY IF NOT EXISTS "atividades_service_only" ON atividades_cliente
+DROP POLICY IF EXISTS "atividades_service_only" ON atividades_cliente;
+CREATE POLICY "atividades_service_only" ON atividades_cliente
   USING (auth.role() = 'service_role');

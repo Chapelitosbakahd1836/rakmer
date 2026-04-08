@@ -65,14 +65,14 @@ export default function Etapa3({ data, onBack }: Props) {
         ...t,
         optionId: `${t.id}-inteira`,
         isMeia: false,
-        label: `${t.nome} (Inteira)`,
+        label: `${t.nome} (Full Price)`,
         displayPreco: t.preco,
       })
       list.push({
         ...t,
         optionId: `${t.id}-meia`,
         isMeia: true,
-        label: `${t.nome} (Meia-Entrada)`,
+        label: `${t.nome} (Half Price)`,
         displayPreco: t.preco / 2,
       })
     })
@@ -87,7 +87,7 @@ export default function Etapa3({ data, onBack }: Props) {
     if (!selectedOption || !data.lead_id) return
     setSaving(true)
     setError(null)
-    setStatusText('Salvando sua seleção...')
+    setStatusText('Saving your selection...')
 
     try {
       await supabase
@@ -115,7 +115,7 @@ export default function Etapa3({ data, onBack }: Props) {
         }).catch(() => {})
       }
 
-      setStatusText('Preparando seu checkout seguro...')
+      setStatusText('Preparing your secure checkout...')
 
       const result = await criarCheckoutSession({
         lead_id: data.lead_id,
@@ -137,10 +137,10 @@ export default function Etapa3({ data, onBack }: Props) {
       if (result.url) {
         window.location.href = result.url
       } else {
-        throw new Error('URL de checkout não retornada')
+        throw new Error('Checkout URL not returned')
       }
     } catch {
-      setError('Erro ao criar checkout. Por favor, tente novamente.')
+      setError('Error creating checkout. Please try again.')
       setSaving(false)
       setStatusText('')
     }
@@ -173,7 +173,7 @@ export default function Etapa3({ data, onBack }: Props) {
           <div className="text-center mb-7">
             <div className="text-5xl mb-3">🎪</div>
             <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-white mb-1">
-              Onde você quer <span style={{ color: '#FFD700' }}>sentar?</span>
+              Where do you want to <span style={{ color: '#FFD700' }}>sit?</span>
             </h2>
             {data.espetaculo_nome && (
               <p className="text-white/45 text-sm">{data.espetaculo_nome}</p>
@@ -192,7 +192,7 @@ export default function Etapa3({ data, onBack }: Props) {
             </div>
           ) : tipos.length === 0 ? (
             <div className="text-center py-12 text-white/50">
-              <p>Nenhum tipo de ingresso disponível para este espetáculo.</p>
+              <p>No ticket types available for this show.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -241,7 +241,7 @@ export default function Etapa3({ data, onBack }: Props) {
                               className="text-xs font-bold animate-pulse"
                               style={{ color: '#FF4F7B' }}
                             >
-                              🔥 QUASE ESGOTADO
+                              🔥 ALMOST SOLD OUT
                             </span>
                           )}
                         </div>
@@ -257,7 +257,7 @@ export default function Etapa3({ data, onBack }: Props) {
                           <span className="font-bold text-2xl" style={{ color: '#FFD700' }}>
                             {formatPrice(tipo.displayPreco)}
                           </span>
-                          <span className="text-white/35 text-xs">/ por pessoa</span>
+                          <span className="text-white/35 text-xs">/ per person</span>
                         </div>
                       </div>
 
@@ -301,9 +301,9 @@ export default function Etapa3({ data, onBack }: Props) {
                         />
                       </div>
                       <div className="flex justify-between text-xs text-white/25 mt-1">
-                        <span>{tipo.lugares_disponiveis} disponíveis</span>
+                        <span>{tipo.lugares_disponiveis} available</span>
                         {isSelected && (
-                          <span>máx. {maxQtd} por pedido</span>
+                          <span>max. {maxQtd} per order</span>
                         )}
                       </div>
                     </div>
@@ -342,7 +342,7 @@ export default function Etapa3({ data, onBack }: Props) {
 
             {/* Urgency */}
             <p className="text-xs text-center mb-3" style={{ color: '#FFD700' }}>
-              ⚡ Reserva válida por 15 minutos após iniciar o pagamento
+              ⚡ Reservation valid for 15 minutes after starting payment
             </p>
 
             <button
@@ -357,10 +357,10 @@ export default function Etapa3({ data, onBack }: Props) {
                     <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.25" />
                     <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
                   </svg>
-                  {statusText || 'Aguarde...'}
+                  {statusText || 'Please wait...'}
                 </span>
               ) : (
-                `🔒 Continuar para Pagamento — ${formatPrice(total)}`
+                `🔒 Continue to Payment — ${formatPrice(total)}`
               )}
             </button>
           </div>

@@ -131,7 +131,7 @@ export default function Etapa1({ data, onNext }: Props) {
             🎟️
           </motion.div>
           <h1 className="font-playfair font-bold text-3xl sm:text-4xl text-white mb-2">
-            Antes de tudo...
+            Receba descontos e promoções exclusivas
           </h1>
           <p className="text-sm font-medium" style={{ color: '#FFD700' }}>
             Como podemos te chamar?

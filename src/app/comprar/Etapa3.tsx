@@ -1,328 +1,250 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { criarCheckoutSession } from '@/app/actions/checkout'
 import type { FunilData } from './FunilCompra'
 
-interface TipoIngresso {
+interface Setor {
   id: string
-  espetaculo_id: string
   nome: string
-  preco: number
-  preco_original: number | null
   descricao: string | null
-  lugares_disponiveis: number
-  lugares_total: number
+  preco_inteira: number
+  preco_meia: number
+  capacidade_total: number
+  capacidade_disponivel: number
+  cor: string | null
+  icone: string | null
+  ordem: number
+  ativo: boolean
 }
 
 function formatPrice(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-function calcDesconto(original: number, atual: number): number {
-  return Math.round(((original - atual) / original) * 100)
-}
-
 interface Props {
   data: FunilData
+  onNext: (updates: Partial<FunilData>) => void
   onBack: () => void
 }
 
-export default function Etapa3({ data, onBack }: Props) {
-  const [tipos, setTipos] = useState<TipoIngresso[]>([])
-  const [loadingTipos, setLoadingTipos] = useState(true)
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(
-    data.tipo_ingresso_id ? `${data.tipo_ingresso_id}-${data.meia_entrada ? 'meia' : 'inteira'}` : null
-  )
+const ICONS: Record<string, string> = {
+  Arquibancada: '🪑',
+  Cadeira: '💺',
+  Camarote: '⭐',
+}
+
+export default function Etapa3({ data, onNext, onBack }: Props) {
+  const [setores, setSetores] = useState<Setor[]>([])
+  const [loading, setLoading] = useState(true)
+  const [setorId, setSetorId] = useState<string | null>(data.tipo_ingresso_id)
+  const [isMeia, setIsMeia] = useState(data.meia_entrada ?? false)
   const [quantidade, setQuantidade] = useState(data.quantidade || 1)
-  const [saving, setSaving] = useState(false)
-  const [statusText, setStatusText] = useState('')
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!data.espetaculo_id) return
     supabase
-      .from('tipos_ingresso')
+      .from('setores')
       .select('*')
-      .eq('espetaculo_id', data.espetaculo_id)
-      .order('preco', { ascending: true })
+      .eq('ativo', true)
+      .order('ordem', { ascending: true })
       .then(({ data: rows }) => {
-        const list = rows || []
-        setTipos(list)
-        if (list.length > 0 && !selectedOptionId) {
-          setSelectedOptionId(`${list[0].id}-inteira`)
+        setSetores(rows || [])
+        if (rows && rows.length > 0 && !setorId) {
+          setSetorId(rows[0].id)
         }
-        setLoadingTipos(false)
+        setLoading(false)
       })
-  }, [data.espetaculo_id, selectedOptionId])
+  }, [])
 
-  const options = useMemo(() => {
-    const list: Array<TipoIngresso & { optionId: string; isMeia: boolean; displayPreco: number; label: string }> = []
-    tipos.forEach((t) => {
-      list.push({
-        ...t,
-        optionId: `${t.id}-inteira`,
-        isMeia: false,
-        label: `${t.nome} (Full Price)`,
-        displayPreco: t.preco,
-      })
-      list.push({
-        ...t,
-        optionId: `${t.id}-meia`,
-        isMeia: true,
-        label: `${t.nome} (Half Price)`,
-        displayPreco: t.preco / 2,
-      })
+  const setor = setores.find((s) => s.id === setorId)
+  const preco = setor ? (isMeia ? setor.preco_meia : setor.preco_inteira) : 0
+  const total = preco * quantidade
+  const maxQtd = setor ? Math.min(10, setor.capacidade_disponivel || 10) : 1
+  const disponiveis = setor?.capacidade_disponivel ?? 0
+  const totalCap = setor?.capacidade_total ?? 0
+  const pctVendido = totalCap > 0 ? ((totalCap - disponiveis) / totalCap) * 100 : 0
+  const quaseEsgotado = totalCap > 0 && disponiveis < totalCap * 0.2
+
+  function handleContinuar() {
+    if (!setor) return
+    onNext({
+      tipo_ingresso_id: setor.id,
+      tipo_nome: setor.nome,
+      meia_entrada: isMeia,
+      quantidade,
+      preco_unitario: preco,
     })
-    return list
-  }, [tipos])
-
-  const selectedOption = options.find((o) => o.optionId === selectedOptionId)
-  const maxQtd = selectedOption ? Math.min(10, selectedOption.lugares_disponiveis) : 1
-  const total = selectedOption ? selectedOption.displayPreco * quantidade : 0
-
-  async function handleCheckout() {
-    if (!selectedOption || !data.lead_id) return
-    setSaving(true)
-    setError(null)
-    setStatusText('Saving your selection...')
-
-    try {
-      await supabase
-        .from('leads')
-        .update({
-          tipo_ingresso_id: selectedOption.id,
-          quantidade,
-          funil_step: 3,
-          funil_step_nome: 'lugar_escolhido',
-        })
-        .eq('id', data.lead_id)
-
-      const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_TRACKING
-      if (webhookUrl) {
-        fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            evento: 'funil_step3_completo',
-            lead_id: data.lead_id,
-            tipo_ingresso_id: selectedOption.id,
-            quantidade,
-            valor_total: total,
-          }),
-        }).catch(() => {})
-      }
-
-      setStatusText('Preparing your secure checkout...')
-
-      const result = await criarCheckoutSession({
-        lead_id: data.lead_id,
-        espetaculo_id: data.espetaculo_id!,
-        tipo_ingresso_id: selectedOption.id,
-        tipo_nome: selectedOption.nome,
-        quantidade,
-        preco_unitario: selectedOption.displayPreco,
-        nome: data.nome,
-        email: data.email,
-        whatsapp: data.whatsapp,
-        espetaculo_nome: data.espetaculo_nome || '',
-        meia_entrada: selectedOption.isMeia,
-      })
-
-      if (result.error) {
-        throw new Error(result.error)
-      }
-      if (result.url) {
-        window.location.href = result.url
-      } else {
-        throw new Error('Checkout URL not returned')
-      }
-    } catch {
-      setError('Error creating checkout. Please try again.')
-      setSaving(false)
-      setStatusText('')
-    }
   }
 
   return (
-    <div
-      className="relative h-full flex flex-col overflow-hidden"
-      style={{ backgroundColor: 'transparent' }}
-    >
-      {/* Side curtain decorations */}
-      <div
-        className="absolute top-0 left-0 w-6 h-full opacity-25 pointer-events-none"
-        style={{
-          background:
-            'repeating-linear-gradient(180deg, #7a0000 0px, #7a0000 28px, #b01a24 28px, #b01a24 56px)',
-        }}
-      />
-      <div
-        className="absolute top-0 right-0 w-6 h-full opacity-25 pointer-events-none"
-        style={{
-          background:
-            'repeating-linear-gradient(180deg, #7a0000 0px, #7a0000 28px, #b01a24 28px, #b01a24 56px)',
-        }}
-      />
+    <div className="relative h-full flex flex-col overflow-hidden">
+      {/* Curtain side decoration */}
+      {['left', 'right'].map((side) => (
+        <div
+          key={side}
+          className={`absolute top-0 ${side}-0 w-5 h-full opacity-20 pointer-events-none`}
+          style={{
+            background:
+              'repeating-linear-gradient(180deg, #7a0000 0px, #7a0000 28px, #b01a24 28px, #b01a24 56px)',
+          }}
+        />
+      ))}
 
-      {/* Scrollable content */}
       <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain">
-        <div className="max-w-xl mx-auto px-4 py-8 pb-4">
+        <div className="max-w-xl mx-auto px-4 py-8">
           <div className="text-center mb-7">
             <div className="text-5xl mb-3">🎪</div>
             <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-white mb-1">
-              Where do you want to <span style={{ color: '#FFD700' }}>sit?</span>
+              Onde você quer <span style={{ color: '#FFD700' }}>sentar?</span>
             </h2>
             {data.espetaculo_nome && (
               <p className="text-white/45 text-sm">{data.espetaculo_nome}</p>
             )}
           </div>
 
-          {loadingTipos ? (
+          {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-28 rounded-xl animate-pulse"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
-                />
+                <div key={i} className="h-32 rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
               ))}
             </div>
-          ) : tipos.length === 0 ? (
-            <div className="text-center py-12 text-white/50">
-              <p>No ticket types available for this show.</p>
-            </div>
           ) : (
-            <div className="space-y-3">
-              {options.map((tipo) => {
-                const isSelected = selectedOptionId === tipo.optionId
-                const pct = tipo.preco_original
-                  ? calcDesconto(tipo.preco_original, tipo.preco)
-                  : null
-                const ocupPct =
-                  tipo.lugares_total > 0
-                    ? ((tipo.lugares_total - tipo.lugares_disponiveis) / tipo.lugares_total) * 100
+            <>
+              {/* Setor cards */}
+              <div className="space-y-3 mb-6">
+                {setores.map((s) => {
+                  const isSelected = setorId === s.id
+                  const icon = s.icone || ICONS[s.nome] || '🎟️'
+                  const capPct = s.capacidade_total > 0
+                    ? ((s.capacidade_total - s.capacidade_disponivel) / s.capacidade_total) * 100
                     : 0
-                const quase = tipo.lugares_total > 0 && tipo.lugares_disponiveis < tipo.lugares_total * 0.2
+                  const quase = s.capacidade_total > 0 && s.capacidade_disponivel < s.capacidade_total * 0.2
 
-                return (
-                  <motion.button
-                    key={tipo.optionId}
-                    onClick={() => {
-                      setSelectedOptionId(tipo.optionId)
-                      setQuantidade(1)
-                    }}
-                    whileTap={{ scale: 0.99 }}
-                    className="w-full text-left p-5 rounded-xl transition-all duration-200"
-                    style={{
-                      backgroundColor: isSelected
-                        ? 'rgba(255,215,0,0.1)'
-                        : 'rgba(255,255,255,0.05)',
-                      border: `2px solid ${isSelected ? '#FFD700' : 'rgba(255,255,255,0.1)'}`,
-                      boxShadow: isSelected ? '0 0 20px rgba(255,215,0,0.15)' : 'none',
-                    }}
+                  return (
+                    <motion.button
+                      key={s.id}
+                      onClick={() => { setSetorId(s.id); setQuantidade(1) }}
+                      whileTap={{ scale: 0.99 }}
+                      className="w-full text-left p-5 rounded-2xl transition-all duration-200"
+                      style={{
+                        backgroundColor: isSelected ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.05)',
+                        border: `2px solid ${isSelected ? '#FFD700' : 'rgba(255,255,255,0.1)'}`,
+                        boxShadow: isSelected ? '0 0 20px rgba(255,215,0,0.15)' : 'none',
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="text-3xl">{icon}</span>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold text-white text-lg">{s.nome}</h3>
+                              {quase && (
+                                <span className="text-xs font-bold animate-pulse" style={{ color: '#FF4F7B' }}>
+                                  🔥 Quase esgotado
+                                </span>
+                              )}
+                            </div>
+                            {s.descricao && (
+                              <p className="text-white/40 text-xs mt-0.5">{s.descricao}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-bold text-xl" style={{ color: '#FFD700' }}>
+                            {formatPrice(s.preco_inteira)}
+                          </p>
+                          <p className="text-white/35 text-xs">inteira</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${capPct}%`, backgroundColor: quase ? '#FF4F7B' : '#22c55e' }}
+                          />
+                        </div>
+                        <p className="text-right text-xs text-white/25 mt-1">
+                          {s.capacidade_disponivel} vagas disponíveis
+                        </p>
+                      </div>
+                    </motion.button>
+                  )
+                })}
+              </div>
+
+              {/* Meia entrada */}
+              {setor && (
+                <div className="mb-6">
+                  <p className="text-white/50 text-xs mb-2 font-semibold uppercase tracking-wider">
+                    Tipo de ingresso
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Inteira', desc: 'Preço cheio', v: false, price: setor.preco_inteira },
+                      { label: 'Meia Entrada', desc: 'Documento obrigatório', v: true, price: setor.preco_meia },
+                    ].map(({ label, desc, v, price }) => (
+                      <button
+                        key={String(v)}
+                        onClick={() => setIsMeia(v)}
+                        className="p-4 rounded-xl transition-all text-left"
+                        style={{
+                          backgroundColor: isMeia === v ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.05)',
+                          border: `2px solid ${isMeia === v ? '#FFD700' : 'rgba(255,255,255,0.1)'}`,
+                        }}
+                      >
+                        <p className="font-bold text-white text-sm">{label}</p>
+                        <p className="text-white/40 text-xs mt-0.5">{desc}</p>
+                        <p className="font-bold mt-2" style={{ color: '#FFD700' }}>
+                          {formatPrice(price)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quantidade */}
+              {setor && (
+                <div className="mb-2">
+                  <p className="text-white/50 text-xs mb-2 font-semibold uppercase tracking-wider">
+                    Quantidade
+                  </p>
+                  <div
+                    className="flex items-center gap-4 rounded-xl px-5 py-4 justify-between"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1.5px solid rgba(255,255,255,0.1)' }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-bold text-white text-xl">{tipo.label}</h3>
-                          {pct && (
-                            <span
-                              className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                              style={{ backgroundColor: '#FFD700' }}
-                            >
-                              -{pct}%
-                            </span>
-                          )}
-                          {quase && (
-                            <span
-                              className="text-xs font-bold animate-pulse"
-                              style={{ color: '#FF4F7B' }}
-                            >
-                              🔥 ALMOST SOLD OUT
-                            </span>
-                          )}
-                        </div>
-                        {tipo.descricao && (
-                          <p className="text-white/45 text-sm mb-2">{tipo.descricao}</p>
-                        )}
-                        <div className="flex items-center gap-2">
-                          {tipo.preco_original && (
-                            <span className="text-white/30 text-sm line-through">
-                              {formatPrice(tipo.isMeia ? tipo.preco_original / 2 : tipo.preco_original)}
-                            </span>
-                          )}
-                          <span className="font-bold text-2xl" style={{ color: '#FFD700' }}>
-                            {formatPrice(tipo.displayPreco)}
-                          </span>
-                          <span className="text-white/35 text-xs">/ per person</span>
-                        </div>
-                      </div>
-
-                      {/* Quantity selector */}
-                      {isSelected && (
-                        <div
-                          className="flex items-center gap-1 rounded-lg p-1 shrink-0"
-                          style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={() => setQuantidade((q) => Math.max(1, q - 1))}
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-lg hover:bg-white/10 transition-colors disabled:opacity-30"
-                            disabled={quantidade <= 1}
-                          >
-                            −
-                          </button>
-                          <span className="w-7 text-center font-bold text-white text-lg">
-                            {quantidade}
-                          </span>
-                          <button
-                            onClick={() => setQuantidade((q) => Math.min(maxQtd, q + 1))}
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-lg hover:bg-white/10 transition-colors disabled:opacity-30"
-                            disabled={quantidade >= maxQtd}
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Availability bar */}
-                    <div className="mt-3">
-                      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${ocupPct}%`,
-                            backgroundColor: quase ? '#FF4F7B' : '#22c55e',
-                          }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-white/25 mt-1">
-                        <span>{tipo.lugares_disponiveis} available</span>
-                        {isSelected && (
-                          <span>max. {maxQtd} per order</span>
-                        )}
-                      </div>
-                    </div>
-                  </motion.button>
-                )
-              })}
-            </div>
-          )}
-
-          {error && (
-            <p className="text-center text-sm mt-4" style={{ color: '#ff6b75' }}>
-              ⚠ {error}
-            </p>
+                    <button
+                      onClick={() => setQuantidade((q) => Math.max(1, q - 1))}
+                      disabled={quantidade <= 1}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-2xl text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
+                    >
+                      −
+                    </button>
+                    <span className="font-bold text-white text-2xl w-8 text-center">{quantidade}</span>
+                    <button
+                      onClick={() => setQuantidade((q) => Math.min(maxQtd, q + 1))}
+                      disabled={quantidade >= maxQtd}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-2xl text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                  {quaseEsgotado && (
+                    <p className="text-xs mt-2 text-center" style={{ color: '#FF4F7B' }}>
+                      ⚠ Restam apenas {disponiveis} vagas neste setor
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* Bottom summary + CTA */}
-      {selectedOption && (
+      {/* Bottom CTA */}
+      {setor && (
         <div
           className="relative z-10 p-4 border-t flex-shrink-0"
           style={{
@@ -332,36 +254,21 @@ export default function Etapa3({ data, onBack }: Props) {
           }}
         >
           <div className="max-w-xl mx-auto">
-            {/* Summary row */}
             <div className="flex items-center justify-between mb-2">
               <div className="text-white/55 text-sm">
-                {selectedOption.label} × {quantidade}
+                {setor.nome} {isMeia ? '(Meia)' : '(Inteira)'} × {quantidade}
               </div>
               <div className="font-bold text-2xl text-white">{formatPrice(total)}</div>
             </div>
-
-            {/* Urgency */}
             <p className="text-xs text-center mb-3" style={{ color: '#FFD700' }}>
-              ⚡ Reservation valid for 15 minutes after starting payment
+              ⚡ Reserva válida por 15 minutos após iniciar o pagamento
             </p>
-
             <button
-              onClick={handleCheckout}
-              disabled={saving}
-              className="w-full py-4 rounded-xl font-bold text-black text-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
+              onClick={handleContinuar}
+              className="w-full py-4 rounded-xl font-bold text-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99]"
               style={{ backgroundColor: '#FFD700', boxShadow: '0 0 28px rgba(255,215,0,0.4)' }}
             >
-              {saving ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.25" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                  </svg>
-                  {statusText || 'Please wait...'}
-                </span>
-              ) : (
-                `🔒 Continue to Payment — ${formatPrice(total)}`
-              )}
+              Continuar → {formatPrice(total)}
             </button>
           </div>
         </div>

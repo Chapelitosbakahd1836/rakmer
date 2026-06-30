@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Etapa1 from './Etapa1'
 import Etapa2 from './Etapa2'
 import Etapa3 from './Etapa3'
+import Etapa4 from './Etapa4'
 import useAbandonTracking from '@/hooks/useAbandonTracking'
 
 function generateUUID(): string {
@@ -16,7 +17,6 @@ function generateUUID(): string {
   })
 }
 
-// Deterministic dots — same pattern as hero
 const DOTS = Array.from({ length: 70 }, (_, i) => ({
   id: i,
   left: `${(i * 37 + 7) % 100}%`,
@@ -28,9 +28,9 @@ const DOTS = Array.from({ length: 70 }, (_, i) => ({
 
 const STEP_LABELS = [
   { num: 1, label: 'Seus Dados', icon: '🎭' },
-  { num: 2, label: 'Escolha a Data', icon: '📅' },
+  { num: 2, label: 'Data', icon: '📅' },
   { num: 3, label: 'Ingresso', icon: '🎪' },
-  { num: 4, label: 'Pagamento', icon: '💳' },
+  { num: 4, label: 'Resumo', icon: '📋' },
 ]
 
 const slideVariants = {
@@ -50,7 +50,7 @@ const slideVariants = {
   }),
 }
 
-export type Step = 1 | 2 | 3
+export type Step = 1 | 2 | 3 | 4
 
 export interface FunilData {
   session_id: string
@@ -118,9 +118,7 @@ function ProgressBar({ currentStep }: { currentStep: Step }) {
                   <div
                     className="flex-1 h-px mx-2 transition-all duration-500"
                     style={{
-                      backgroundColor: currentStep > s.num
-                        ? '#FFD700'
-                        : 'rgba(255,255,255,0.12)',
+                      backgroundColor: currentStep > s.num ? '#FFD700' : 'rgba(255,255,255,0.12)',
                     }}
                   />
                 )}
@@ -211,7 +209,6 @@ export default function FunilCompra() {
   })
 
   useEffect(() => {
-    // Mostra cortina só na primeira visita da sessão
     const curtainShown = sessionStorage.getItem('curtain_shown')
     if (!curtainShown) {
       setShowCurtain(true)
@@ -239,7 +236,6 @@ export default function FunilCompra() {
 
     if (cancelado === 'true') {
       setShowRecovery(true)
-      // Clean up URL without losing state
       const url = new URL(window.location.href)
       url.searchParams.delete('cancelado')
       window.history.replaceState({}, '', url.toString())
@@ -249,7 +245,7 @@ export default function FunilCompra() {
   const goNext = useCallback((updates?: Partial<FunilData>) => {
     if (updates) setData((prev) => ({ ...prev, ...updates }))
     setDirection(1)
-    setStep((prev) => (Math.min(prev + 1, 3) as Step))
+    setStep((prev) => (Math.min(prev + 1, 4) as Step))
   }, [])
 
   const goBack = useCallback(() => {
@@ -305,14 +301,13 @@ export default function FunilCompra() {
           <RecoveryModal
             onContinue={() => {
               setShowRecovery(false)
-              // Go to step 3 if we have a lead, otherwise step 1
               if (data.lead_id) setStep(3)
             }}
             onClose={() => setShowRecovery(false)}
           />
         )}
       </AnimatePresence>
-      {/* Pink background — same as hero */}
+
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -321,7 +316,6 @@ export default function FunilCompra() {
         }}
       />
 
-      {/* Yellow twinkling dots */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         {DOTS.map((dot) => (
           <div
@@ -340,10 +334,8 @@ export default function FunilCompra() {
         ))}
       </div>
 
-      {/* Progress bar */}
       <ProgressBar currentStep={step} />
 
-      {/* Back button */}
       {step > 1 && (
         <button
           onClick={goBack}
@@ -354,7 +346,6 @@ export default function FunilCompra() {
         </button>
       )}
 
-      {/* Steps */}
       <div className="flex-1 relative overflow-hidden z-10">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
@@ -368,7 +359,8 @@ export default function FunilCompra() {
           >
             {step === 1 && <Etapa1 data={data} onNext={goNext} />}
             {step === 2 && <Etapa2 data={data} onNext={goNext} onBack={goBack} />}
-            {step === 3 && <Etapa3 data={data} onBack={goBack} />}
+            {step === 3 && <Etapa3 data={data} onNext={goNext} onBack={goBack} />}
+            {step === 4 && <Etapa4 data={data} onBack={goBack} />}
           </motion.div>
         </AnimatePresence>
       </div>

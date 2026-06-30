@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Users, Tent, Ticket, Megaphone, Settings, Menu, X, LogOut } from 'lucide-react'
+import { Home, Users, Tent, Ticket, Megaphone, Settings, Menu, X, LogOut, QrCode, ShoppingCart } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ReactNode } from 'react'
 
@@ -14,6 +14,8 @@ const links = [
   { name: 'Eventos', href: '/admin/eventos', icon: Tent },
   { name: 'Ingressos', href: '/admin/ingressos', icon: Ticket },
   { name: 'Remarketing', href: '/admin/remarketing', icon: Megaphone },
+  { name: 'Bilheteria', href: '/admin/bilheteria', icon: ShoppingCart },
+  { name: 'Portaria', href: '/admin/portaria', icon: QrCode },
   { name: 'Configurações', href: '/admin/configuracoes', icon: Settings },
 ]
 
@@ -84,11 +86,66 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 export default function AdminLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [checked, setChecked] = useState(false)
 
-  // Login page: render without sidebar
-  if (pathname === '/admin/login') {
+  const isFullScreenRoute =
+    pathname === '/admin/login' ||
+    pathname.startsWith('/admin/portaria') ||
+    pathname.startsWith('/admin/bilheteria')
+
+  // Verifica permissão de acesso conforme o papel do usuário
+  useEffect(() => {
+    if (pathname === '/admin/login') {
+      setChecked(true)
+      return
+    }
+
+    let active = true
+    async function checkAccess() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        router.push('/admin/login')
+        return
+      }
+
+      const { data: perfil } = await supabase
+        .from('perfis_usuario')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const role = perfil?.role ?? 'admin'
+
+      if (role === 'portaria' && !pathname.startsWith('/admin/portaria')) {
+        router.push('/admin/portaria')
+        return
+      }
+      if (role === 'bilheteria' && !pathname.startsWith('/admin/bilheteria')) {
+        router.push('/admin/bilheteria')
+        return
+      }
+
+      if (active) setChecked(true)
+    }
+    checkAccess()
+    return () => { active = false }
+  }, [pathname, router])
+
+  // Login, portaria e bilheteria: render sem sidebar (interfaces dedicadas)
+  if (isFullScreenRoute) {
     return <>{children}</>
+  }
+
+  if (!checked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

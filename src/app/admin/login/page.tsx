@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -26,10 +26,25 @@ export default function AdminLoginPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      router.push('/admin');
-      router.refresh();
+      return;
     }
+
+    const userId = authData.user?.id;
+    let destino = '/admin';
+
+    if (userId) {
+      const { data: perfil } = await supabase
+        .from('perfis_usuario')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (perfil?.role === 'portaria') destino = '/admin/portaria';
+      else if (perfil?.role === 'bilheteria') destino = '/admin/bilheteria';
+    }
+
+    router.push(destino);
+    router.refresh();
   };
 
   return (

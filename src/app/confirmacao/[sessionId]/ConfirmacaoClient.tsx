@@ -133,8 +133,8 @@ export default function ConfirmacaoClient({
     link.click()
   }
 
-  const codigoIngresso = `RKM-${pedidoId.slice(0, 8).toUpperCase()}`
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(codigoIngresso)}&size=200x200&bgcolor=ffffff&color=1a0010&margin=12`
+  const codigoIngresso = `RKM-${pedidoId.slice(0, 4)}-${pedidoId.slice(4, 8)}`.toUpperCase()
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(`RAKMER:${pedidoId}`)}&size=200x200&bgcolor=ffffff&color=1a0010&margin=12`
 
   const dateInfo = espetaculo ? formatDate(espetaculo.data_hora) : null
 

@@ -43,9 +43,11 @@ export default function Etapa3({ data, onNext, onBack }: Props) {
   const [quantidade, setQuantidade] = useState(data.quantidade || 1)
 
   useEffect(() => {
+    if (!data.espetaculo_id || data.espetaculo_id.startsWith('slug:')) return
     supabase
-      .from('setores')
+      .from('setor_disponibilidade')
       .select('*')
+      .eq('espetaculo_id', data.espetaculo_id)
       .eq('ativo', true)
       .order('ordem', { ascending: true })
       .then(({ data: rows }) => {
@@ -55,7 +57,7 @@ export default function Etapa3({ data, onNext, onBack }: Props) {
         }
         setLoading(false)
       })
-  }, [])
+  }, [data.espetaculo_id])
 
   const setor = setores.find((s) => s.id === setorId)
   const preco = setor ? (isMeia ? setor.preco_meia : setor.preco_inteira) : 0

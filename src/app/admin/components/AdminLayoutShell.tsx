@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Users, Tent, Ticket, Megaphone, Settings, Menu, X, LogOut, QrCode, ShoppingCart } from 'lucide-react'
+import { Home, Users, Tent, Ticket, Megaphone, Settings, Menu, X, LogOut, QrCode, ShoppingCart, Armchair } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ReactNode } from 'react'
 
@@ -12,6 +12,7 @@ const links = [
   { name: 'Leads', href: '/admin/leads', icon: Users },
   { name: 'Clientes', href: '/admin/clientes', icon: Users },
   { name: 'Eventos', href: '/admin/eventos', icon: Tent },
+  { name: 'Setores', href: '/admin/setores', icon: Armchair },
   { name: 'Ingressos', href: '/admin/ingressos', icon: Ticket },
   { name: 'Remarketing', href: '/admin/remarketing', icon: Megaphone },
   { name: 'Bilheteria', href: '/admin/bilheteria', icon: ShoppingCart },

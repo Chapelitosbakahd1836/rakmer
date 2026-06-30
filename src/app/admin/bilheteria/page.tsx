@@ -17,6 +17,7 @@ interface Setor {
   nome: string
   preco_inteira: number
   preco_meia: number
+  capacidade_disponivel: number
 }
 
 interface TicketImpresso {
@@ -54,11 +55,15 @@ export default function BilheteriaPage() {
   const [vendasHoje, setVendasHoje] = useState({ qtd: 0, total: 0 })
 
   useEffect(() => {
-    load()
+    loadEventos()
     loadVendasHoje()
   }, [])
 
-  async function load() {
+  useEffect(() => {
+    if (espetaculoId) loadSetores(espetaculoId)
+  }, [espetaculoId])
+
+  async function loadEventos() {
     const { data: eventos } = await supabase
       .from('espetaculos')
       .select('id, nome, data_hora, cidade, status')
@@ -66,14 +71,17 @@ export default function BilheteriaPage() {
       .order('data_hora', { ascending: true })
     setEspetaculos(eventos || [])
     if (eventos && eventos.length > 0) setEspetaculoId(eventos[0].id)
+  }
 
+  async function loadSetores(espId: string) {
     const { data: setoresData } = await supabase
-      .from('setores')
-      .select('id, nome, preco_inteira, preco_meia')
+      .from('setor_disponibilidade')
+      .select('id, nome, preco_inteira, preco_meia, capacidade_disponivel')
+      .eq('espetaculo_id', espId)
       .eq('ativo', true)
       .order('ordem', { ascending: true })
     setSetores(setoresData || [])
-    if (setoresData && setoresData.length > 0) setSetorId(setoresData[0].id)
+    setSetorId((prev) => (setoresData?.some((s) => s.id === prev) ? prev : setoresData?.[0]?.id || ''))
   }
 
   async function loadVendasHoje() {
@@ -96,6 +104,10 @@ export default function BilheteriaPage() {
   async function handleVender() {
     if (!setor || !espetaculoId || !nomeCliente.trim()) {
       setError('Preencha o nome do cliente e selecione o ingresso.')
+      return
+    }
+    if (quantidade > setor.capacidade_disponivel) {
+      setError(`Restam apenas ${setor.capacidade_disponivel} vaga(s) em ${setor.nome} para esta sessão.`)
       return
     }
     setLoading(true)
@@ -143,6 +155,7 @@ export default function BilheteriaPage() {
       setNomeCliente('')
       setQuantidade(1)
       loadVendasHoje()
+      loadSetores(espetaculoId)
     } catch (err) {
       console.error(err)
       setError('Erro ao registrar venda. Tente novamente.')
@@ -212,13 +225,16 @@ export default function BilheteriaPage() {
                   <button
                     key={s.id}
                     onClick={() => setSetorId(s.id)}
-                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                    disabled={s.capacidade_disponivel <= 0}
+                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all disabled:opacity-40 ${
                       setorId === s.id ? 'border-rose-500 bg-rose-50' : 'border-slate-200'
                     }`}
                   >
                     <span className="font-semibold text-slate-800 text-sm">{s.nome}</span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-500 text-right">
                       {formatPrice(s.preco_inteira)} / {formatPrice(s.preco_meia)} meia
+                      <br />
+                      {s.capacidade_disponivel <= 0 ? 'Esgotado' : `${s.capacidade_disponivel} vagas`}
                     </span>
                   </button>
                 ))}
@@ -248,7 +264,7 @@ export default function BilheteriaPage() {
                 <div className="flex items-center justify-between border border-slate-200 rounded-xl px-2">
                   <button onClick={() => setQuantidade((q) => Math.max(1, q - 1))} className="w-9 h-9 text-lg font-bold text-slate-600">−</button>
                   <span className="font-bold text-slate-800">{quantidade}</span>
-                  <button onClick={() => setQuantidade((q) => Math.min(20, q + 1))} className="w-9 h-9 text-lg font-bold text-slate-600">+</button>
+                  <button onClick={() => setQuantidade((q) => Math.min(Math.min(20, setor?.capacidade_disponivel || 20), q + 1))} className="w-9 h-9 text-lg font-bold text-slate-600">+</button>
                 </div>
               </div>
             </div>

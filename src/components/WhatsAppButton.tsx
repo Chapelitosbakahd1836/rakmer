@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 const WA_ICON = (
   <svg className="w-7 h-7" viewBox="0 0 24 24" fill="white">
@@ -10,6 +11,7 @@ const WA_ICON = (
 
 export default function WhatsAppButton() {
   const [visible, setVisible] = useState(false)
+  const pathname = usePathname()
   const whatsappUrl = `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_SUPORTE}?text=Oi!%20Quero%20saber%20sobre%20os%20espet%C3%A1culos`
 
   useEffect(() => {
@@ -17,7 +19,7 @@ export default function WhatsAppButton() {
     return () => clearTimeout(timer)
   }, [])
 
-  if (!visible) return null
+  if (!visible || pathname.startsWith('/admin') || pathname.startsWith('/confirmacao')) return null
 
   return (
     <>

@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Image from 'next/image'
 
 const TITLE_LINE1 = ['O', 'melhor', 'circo', 'do', 'brasil', 'chegooouu']
@@ -24,12 +23,10 @@ interface HeroSectionProps {
 
 export default function HeroSection({ whatsappUrl, cidade }: HeroSectionProps) {
   const router = useRouter()
-  const [curtaining, setCurtaining] = useState(false)
 
   function handleBuyClick(e: React.MouseEvent) {
     e.preventDefault()
-    setCurtaining(true)
-    setTimeout(() => router.push('/comprar'), 650)
+    router.push('/comprar')
   }
 
   return (
@@ -181,35 +178,6 @@ export default function HeroSection({ whatsappUrl, cidade }: HeroSectionProps) {
         </motion.div>
       </div>
 
-      {/* Curtain overlay — closes on buy click */}
-      <AnimatePresence>
-        {curtaining && (
-          <>
-            <motion.div
-              className="fixed inset-y-0 left-0 w-1/2 z-50 border-r border-white/5"
-              style={{
-                background:
-                  'repeating-linear-gradient(90deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
-                boxShadow: 'inset -20px 0 50px rgba(0,0,0,0.5)'
-              }}
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              transition={{ duration: 0.65, ease: [0.76, 0, 0.24, 1] }}
-            />
-            <motion.div
-              className="fixed inset-y-0 right-0 w-1/2 z-50 border-l border-white/5"
-              style={{
-                background:
-                  'repeating-linear-gradient(270deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
-                boxShadow: 'inset 20px 0 50px rgba(0,0,0,0.5)'
-              }}
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              transition={{ duration: 0.65, ease: [0.76, 0, 0.24, 1] }}
-            />
-          </>
-        )}
-      </AnimatePresence>
     </section>
   )
 }

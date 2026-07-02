@@ -3,3 +3,5 @@
 .env.local
 .env
 tsconfig.tsbuildinfo
+.claude/settings.local.json
+.mcp.json

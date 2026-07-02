@@ -27,7 +27,6 @@ const DOTS = Array.from({ length: 70 }, (_, i) => ({
 }))
 
 const STEP_LABELS = [
-  { num: 1, label: 'Seus Dados', icon: '🎭' },
   { num: 2, label: 'Data', icon: '📅' },
   { num: 3, label: 'Ingresso', icon: '🎪' },
   { num: 4, label: 'Resumo', icon: '📋' },
@@ -50,7 +49,7 @@ const slideVariants = {
   }),
 }
 
-export type Step = 1 | 2 | 3 | 4
+export type Step = 2 | 3 | 4
 
 export interface FunilData {
   session_id: string
@@ -72,6 +71,7 @@ export interface FunilData {
 }
 
 function ProgressBar({ currentStep }: { currentStep: Step }) {
+  const currentIdx = STEP_LABELS.findIndex((s) => s.num === currentStep)
   return (
     <div
       className="relative z-10 px-4 py-4 sm:py-5 flex-shrink-0"
@@ -128,7 +128,7 @@ function ProgressBar({ currentStep }: { currentStep: Step }) {
         </div>
         <div className="text-center mt-2 sm:hidden">
           <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Etapa {currentStep} de 4
+            Etapa {currentIdx + 1} de {STEP_LABELS.length}
           </span>
         </div>
       </div>
@@ -184,10 +184,10 @@ function RecoveryModal({ onContinue, onClose }: { onContinue: () => void; onClos
 
 export default function FunilCompra() {
   const searchParams = useSearchParams()
-  const [step, setStep] = useState<Step>(1)
+  const [step, setStep] = useState<Step>(2)
   const [direction, setDirection] = useState(1)
   const [showRecovery, setShowRecovery] = useState(false)
-  const [showCurtain, setShowCurtain] = useState(false)
+  const [showDataPopup, setShowDataPopup] = useState(false)
 
   const [data, setData] = useState<FunilData>({
     session_id: '',
@@ -209,12 +209,6 @@ export default function FunilCompra() {
   })
 
   useEffect(() => {
-    const curtainShown = sessionStorage.getItem('curtain_shown')
-    if (!curtainShown) {
-      setShowCurtain(true)
-      sessionStorage.setItem('curtain_shown', '1')
-    }
-
     let sessionId = sessionStorage.getItem('session_id')
     if (!sessionId) {
       sessionId = generateUUID()
@@ -234,6 +228,19 @@ export default function FunilCompra() {
       lead_id: leadParam || prev.lead_id,
     }))
 
+    // Pop-up de boas-vindas: só aparece se o visitante ainda não deixou os dados
+    const dadosColetados = sessionStorage.getItem('dados_coletados')
+    if (!dadosColetados && !leadParam) {
+      setShowDataPopup(true)
+    } else {
+      setData((prev) => ({
+        ...prev,
+        nome: sessionStorage.getItem('funil_nome') || prev.nome,
+        whatsapp: sessionStorage.getItem('funil_whatsapp') || prev.whatsapp,
+        lead_id: leadParam || sessionStorage.getItem('lead_id') || prev.lead_id,
+      }))
+    }
+
     if (cancelado === 'true') {
       setShowRecovery(true)
       const url = new URL(window.location.href)
@@ -250,7 +257,15 @@ export default function FunilCompra() {
 
   const goBack = useCallback(() => {
     setDirection(-1)
-    setStep((prev) => (Math.max(prev - 1, 1) as Step))
+    setStep((prev) => (Math.max(prev - 1, 2) as Step))
+  }, [])
+
+  const handleDataDone = useCallback((updates: Partial<FunilData>) => {
+    setData((prev) => ({ ...prev, ...updates }))
+    sessionStorage.setItem('dados_coletados', '1')
+    if (updates.nome) sessionStorage.setItem('funil_nome', updates.nome)
+    if (updates.whatsapp) sessionStorage.setItem('funil_whatsapp', updates.whatsapp)
+    setShowDataPopup(false)
   }, [])
 
   useAbandonTracking({
@@ -267,33 +282,9 @@ export default function FunilCompra() {
       className="flex flex-col overflow-hidden relative"
       style={{ minHeight: '100dvh' }}
     >
+      {/* Pop-up de dados — nome + whatsapp opcional */}
       <AnimatePresence>
-        {showCurtain && (
-          <>
-            <motion.div
-              className="fixed inset-y-0 left-0 w-1/2 z-[100] border-r border-white/5"
-              style={{
-                background:
-                  'repeating-linear-gradient(90deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
-                boxShadow: 'inset -20px 0 50px rgba(0,0,0,0.5)'
-              }}
-              initial={{ x: 0 }}
-              animate={{ x: '-100%' }}
-              transition={{ duration: 0.65, ease: [0.76, 0, 0.24, 1], delay: 0.05 }}
-            />
-            <motion.div
-              className="fixed inset-y-0 right-0 w-1/2 z-[100] border-l border-white/5"
-              style={{
-                background:
-                  'repeating-linear-gradient(270deg, #7a0000 0px, #7a0000 24px, #a01520 24px, #a01520 48px)',
-                boxShadow: 'inset 20px 0 50px rgba(0,0,0,0.5)'
-              }}
-              initial={{ x: 0 }}
-              animate={{ x: '100%' }}
-              transition={{ duration: 0.65, ease: [0.76, 0, 0.24, 1], delay: 0.05 }}
-            />
-          </>
-        )}
+        {showDataPopup && <Etapa1 data={data} onDone={handleDataDone} />}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -336,7 +327,7 @@ export default function FunilCompra() {
 
       <ProgressBar currentStep={step} />
 
-      {step > 1 && (
+      {step > 2 && (
         <button
           onClick={goBack}
           className="absolute top-[5.5rem] left-4 sm:left-8 z-30 flex items-center gap-1.5 hover:text-white transition-colors text-sm py-1"
@@ -357,7 +348,6 @@ export default function FunilCompra() {
             exit="exit"
             className="absolute inset-0"
           >
-            {step === 1 && <Etapa1 data={data} onNext={goNext} />}
             {step === 2 && <Etapa2 data={data} onNext={goNext} onBack={goBack} />}
             {step === 3 && <Etapa3 data={data} onNext={goNext} onBack={goBack} />}
             {step === 4 && <Etapa4 data={data} onBack={goBack} />}

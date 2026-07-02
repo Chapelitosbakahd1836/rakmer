@@ -52,7 +52,7 @@ function Toast({ msg, type }: { msg: string; type: 'ok' | 'err' }) {
   return (
     <div
       className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-xl text-sm font-semibold shadow-xl text-white transition-all ${
-        type === 'ok' ? 'bg-green-600' : 'bg-rose-600'
+        type === 'ok' ? 'bg-green-600' : 'bg-red-600'
       }`}
     >
       {type === 'ok' ? '✓' : '⚠'} {msg}
@@ -72,11 +72,11 @@ function SecaoGeral({
   return (
     <div className="space-y-5">
       <div>
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
           Nome da Cidade
         </label>
         <input
-          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-base"
+          className="w-full border border-slate-600 bg-slate-900 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-base"
           value={configs['cidade'] || ''}
           onChange={(e) => onChange('cidade', e.target.value)}
           placeholder="Ex: Pompéia-SP"
@@ -87,11 +87,11 @@ function SecaoGeral({
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
           Nome do Espetáculo
         </label>
         <input
-          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-base"
+          className="w-full border border-slate-600 bg-slate-900 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-base"
           value={configs['nome_espetaculo'] || ''}
           onChange={(e) => onChange('nome_espetaculo', e.target.value)}
           placeholder="Ex: Grande Espetáculo Circo Rakmer"
@@ -141,7 +141,7 @@ function SecaoProgramacao({
     <div className="space-y-6">
       {/* Período */}
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
           Período dos Shows
         </p>
         <div className="grid grid-cols-2 gap-3">
@@ -149,7 +149,7 @@ function SecaoProgramacao({
             <label className="block text-xs text-slate-500 mb-1">Data de início</label>
             <input
               type="date"
-              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm"
+              className="w-full border border-slate-600 bg-slate-900 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
               value={configs['data_inicio'] || todayISO}
               min={todayISO}
               onChange={(e) => onChange('data_inicio', e.target.value)}
@@ -159,7 +159,7 @@ function SecaoProgramacao({
             <label className="block text-xs text-slate-500 mb-1">Data de fim</label>
             <input
               type="date"
-              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm"
+              className="w-full border border-slate-600 bg-slate-900 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
               value={configs['data_fim'] || todayISO}
               min={configs['data_inicio'] || todayISO}
               onChange={(e) => onChange('data_fim', e.target.value)}
@@ -170,11 +170,11 @@ function SecaoProgramacao({
 
       {/* Horários semana */}
       <div>
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
           Horários — Segunda a Sexta
         </label>
         <input
-          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-base"
+          className="w-full border border-slate-600 bg-slate-900 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-base"
           value={configs['horarios_semana'] || '20:30'}
           onChange={(e) => onChange('horarios_semana', e.target.value)}
           placeholder="20:30"
@@ -186,11 +186,11 @@ function SecaoProgramacao({
 
       {/* Horários fim de semana */}
       <div>
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
           Horários — Sábado, Domingo e Feriados
         </label>
         <input
-          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-base"
+          className="w-full border border-slate-600 bg-slate-900 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-base"
           value={configs['horarios_fds'] || '18:00,20:30'}
           onChange={(e) => onChange('horarios_fds', e.target.value)}
           placeholder="18:00,20:30"
@@ -202,11 +202,11 @@ function SecaoProgramacao({
 
       {/* Dias sem show */}
       <div>
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
           Dias sem Show (Blackout)
         </label>
         <input
-          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-base"
+          className="w-full border border-slate-600 bg-slate-900 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-base"
           value={configs['blackout_dates'] || ''}
           onChange={(e) => onChange('blackout_dates', e.target.value)}
           placeholder="2026-05-01,2026-06-19"
@@ -217,7 +217,7 @@ function SecaoProgramacao({
       </div>
 
       {/* Divider */}
-      <div className="border-t border-slate-100 pt-4">
+      <div className="border-t border-slate-700 pt-4">
         <p className="text-xs text-slate-500 mb-3">
           O sistema irá criar um espetáculo para cada dia/horário no período, usando os templates de ingresso ativos. Dias que já têm espetáculo cadastrado serão ignorados.
         </p>
@@ -236,8 +236,8 @@ function SecaoProgramacao({
         <div
           className={`rounded-xl p-4 text-sm ${
             resultado.erros.length > 0
-              ? 'bg-rose-50 border border-rose-200 text-rose-800'
-              : 'bg-green-50 border border-green-200 text-green-800'
+              ? 'bg-red-500/10 border border-red-500/20 text-red-400'
+              : 'bg-green-500/10 border border-green-500/20 text-green-400'
           }`}
         >
           <p className="font-bold mb-1">
@@ -334,20 +334,20 @@ function SecaoIngressos({
           <div
             key={t.id}
             className={`flex items-center gap-3 p-4 rounded-xl border transition-opacity ${
-              t.ativo ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'
+              t.ativo ? 'border-slate-700 bg-slate-900' : 'border-slate-700/50 bg-slate-900/50 opacity-60'
             }`}
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-slate-800">{t.nome}</span>
+                <span className="font-bold text-white">{t.nome}</span>
                 {!t.ativo && (
-                  <span className="text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded-full">
                     Inativo
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                <span className="text-sm font-bold text-rose-600">
+                <span className="text-sm font-bold text-pink-400">
                   R$ {t.preco.toFixed(2).replace('.', ',')}
                 </span>
                 {t.preco_original && (
@@ -364,14 +364,14 @@ function SecaoIngressos({
             <div className="flex gap-2 flex-shrink-0">
               <button
                 onClick={() => setEditando({ ...t })}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
               >
                 Editar
               </button>
               <button
                 onClick={() => t.id && handleExcluir(t.id)}
                 disabled={isPending}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
               >
                 Remover
               </button>
@@ -384,15 +384,15 @@ function SecaoIngressos({
       {editando && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditando(null)} />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4">
-            <h3 className="font-bold text-lg text-slate-800">
+          <div className="relative w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 space-y-4">
+            <h3 className="font-bold text-lg text-white">
               {editando.id ? 'Editar Template' : 'Novo Template'}
             </h3>
 
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Nome</label>
               <input
-                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm"
+                className="w-full border border-slate-600 bg-slate-900 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
                 value={editando.nome}
                 onChange={(e) => setEditando({ ...editando, nome: e.target.value })}
                 placeholder="Ex: Pista, VIP, Meia-entrada..."
@@ -406,7 +406,7 @@ function SecaoIngressos({
                   type="number"
                   min="0"
                   step="0.01"
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm"
+                  className="w-full border border-slate-600 bg-slate-900 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
                   value={editando.preco}
                   onChange={(e) => setEditando({ ...editando, preco: parseFloat(e.target.value) || 0 })}
                 />
@@ -419,7 +419,7 @@ function SecaoIngressos({
                   type="number"
                   min="0"
                   step="0.01"
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm"
+                  className="w-full border border-slate-600 bg-slate-900 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
                   value={editando.preco_original ?? ''}
                   placeholder="0,00"
                   onChange={(e) =>
@@ -439,7 +439,7 @@ function SecaoIngressos({
               <input
                 type="number"
                 min="1"
-                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm"
+                className="w-full border border-slate-600 bg-slate-900 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
                 value={editando.lugares_total}
                 onChange={(e) =>
                   setEditando({ ...editando, lugares_total: parseInt(e.target.value) || 1 })
@@ -452,7 +452,7 @@ function SecaoIngressos({
                 Descrição (opcional)
               </label>
               <input
-                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm"
+                className="w-full border border-slate-600 bg-slate-900 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm"
                 value={editando.descricao ?? ''}
                 onChange={(e) =>
                   setEditando({ ...editando, descricao: e.target.value || null })
@@ -467,9 +467,9 @@ function SecaoIngressos({
                 id="ativo"
                 checked={editando.ativo}
                 onChange={(e) => setEditando({ ...editando, ativo: e.target.checked })}
-                className="w-4 h-4 accent-rose-500"
+                className="w-4 h-4 accent-pink-500"
               />
-              <label htmlFor="ativo" className="text-sm text-slate-700">
+              <label htmlFor="ativo" className="text-sm text-slate-300">
                 Ativo (usado ao gerar novos shows)
               </label>
             </div>
@@ -477,7 +477,7 @@ function SecaoIngressos({
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setEditando(null)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-600"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-slate-700 text-slate-200 hover:bg-slate-600"
               >
                 Cancelar
               </button>
@@ -552,18 +552,18 @@ function SecaoShows({
     return (
       <div
         className={`flex items-center gap-3 p-3 rounded-xl border text-sm transition-opacity ${
-          isCanceled || isPast ? 'opacity-50 bg-slate-50' : 'bg-white'
-        } border-slate-200`}
+          isCanceled || isPast ? 'opacity-50 bg-slate-800/50' : 'bg-slate-900'
+        } border-slate-700`}
       >
         {/* Date block */}
         <div className="flex-shrink-0 w-14 text-center">
-          <div className="font-bold text-slate-800 text-base leading-none">
+          <div className="font-bold text-white text-base leading-none">
             {new Date(s.data_hora).getDate().toString().padStart(2, '0')}
           </div>
           <div className="text-xs text-slate-400 uppercase">
             {new Date(s.data_hora).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}
           </div>
-          <div className="text-xs font-semibold text-rose-500 mt-0.5">
+          <div className="text-xs font-semibold text-pink-400 mt-0.5">
             {formatTime(s.data_hora)}
           </div>
         </div>
@@ -571,12 +571,12 @@ function SecaoShows({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-semibold text-slate-700 text-xs">{s.cidade}</span>
+            <span className="font-semibold text-slate-300 text-xs">{s.cidade}</span>
             <span
               className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
                 isCanceled
-                  ? 'bg-slate-100 text-slate-500'
-                  : 'bg-green-100 text-green-700'
+                  ? 'bg-slate-700 text-slate-400'
+                  : 'bg-green-500/10 text-green-400'
               }`}
             >
               {isCanceled ? 'Cancelado' : 'Publicado'}
@@ -594,7 +594,7 @@ function SecaoShows({
             <button
               onClick={() => handlePublicar(s.id)}
               disabled={isPending}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors"
             >
               Publicar
             </button>
@@ -603,7 +603,7 @@ function SecaoShows({
               onClick={() => handleCancelar(s.id)}
               disabled={isPending || s.vendidos > 0}
               title={s.vendidos > 0 ? 'Tem ingressos vendidos' : ''}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
@@ -625,8 +625,8 @@ function SecaoShows({
             onClick={() => setFiltro(f)}
             className={`px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
               filtro === f
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                ? 'bg-pink-600 text-white'
+                : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
             }`}
           >
             {f === 'publicado' ? 'Ativos' : f === 'cancelado' ? 'Cancelados' : 'Todos'}
@@ -708,20 +708,20 @@ export default function ConfiguracoesClient({ initialConfigs, initialTemplates, 
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       <header className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Configurações</h1>
-        <p className="text-slate-500 mt-1 text-sm">Gerencie cidade, horários, shows e ingressos.</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Configurações</h1>
+        <p className="text-slate-400 mt-1 text-sm">Gerencie cidade, horários, shows e ingressos.</p>
       </header>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl mb-6 overflow-x-auto">
+      <div className="flex gap-1 bg-slate-800 border border-slate-700 p-1 rounded-2xl mb-6 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
               activeTab === t.id
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-slate-700 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span className="text-base">{t.icon}</span>
@@ -732,7 +732,7 @@ export default function ConfiguracoesClient({ initialConfigs, initialTemplates, 
 
       {/* Content */}
       <div
-        className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6"
+        className="bg-slate-900 rounded-2xl border border-slate-700 p-5 sm:p-6"
         style={{ minHeight: '400px' }}
       >
         {activeTab === 'geral' && (

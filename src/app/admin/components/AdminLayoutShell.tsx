@@ -3,21 +3,15 @@
 import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Users, Tent, Ticket, Megaphone, Settings, Menu, X, LogOut, QrCode, ShoppingCart, Armchair } from 'lucide-react'
+import { Home, Users, Ticket, Settings, Menu, X, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ReactNode } from 'react'
 
 const links = [
-  { name: 'Dashboard', href: '/admin', icon: Home },
-  { name: 'Leads', href: '/admin/leads', icon: Users },
-  { name: 'Clientes', href: '/admin/clientes', icon: Users },
-  { name: 'Eventos', href: '/admin/eventos', icon: Tent },
-  { name: 'Setores', href: '/admin/setores', icon: Armchair },
-  { name: 'Ingressos', href: '/admin/ingressos', icon: Ticket },
-  { name: 'Remarketing', href: '/admin/remarketing', icon: Megaphone },
-  { name: 'Bilheteria', href: '/admin/bilheteria', icon: ShoppingCart },
-  { name: 'Portaria', href: '/admin/portaria', icon: QrCode },
-  { name: 'Configurações', href: '/admin/configuracoes', icon: Settings },
+  { name: 'Dashboard',     href: '/admin',                icon: Home },
+  { name: 'Contatos',      href: '/admin/leads',          icon: Users },
+  { name: 'Ingressos',     href: '/admin/ingressos',      icon: Ticket },
+  { name: 'Configurações', href: '/admin/configuracoes',  icon: Settings },
 ]
 
 function NavLinks({ onClose }: { onClose?: () => void }) {
@@ -36,11 +30,11 @@ function NavLinks({ onClose }: { onClose?: () => void }) {
             onClick={onClose}
             className={`flex items-center px-5 py-3.5 text-sm font-medium transition-colors group ${
               isActive
-                ? 'bg-rose-600/20 text-white border-r-2 border-rose-500'
+                ? 'bg-pink-600/20 text-white border-r-2 border-pink-500'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
           >
-            <Icon className={`w-5 h-5 mr-3 flex-shrink-0 ${isActive ? 'text-rose-400' : 'text-slate-500 group-hover:text-rose-400'}`} />
+            <Icon className={`w-5 h-5 mr-3 flex-shrink-0 ${isActive ? 'text-pink-400' : 'text-slate-500 group-hover:text-pink-400'}`} />
             <span>{link.name}</span>
           </Link>
         )
@@ -61,9 +55,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="flex flex-col h-full bg-slate-900 text-white">
-      {/* Logo header */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 flex-shrink-0">
-        <span className="font-bold text-lg uppercase tracking-wider text-rose-500">🎪 Admin</span>
+        <span className="font-bold text-lg uppercase tracking-wider text-pink-400">🎪 Admin</span>
         {onClose && (
           <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 md:hidden">
             <X className="w-5 h-5" />
@@ -73,10 +66,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       <NavLinks onClose={onClose} />
 
-      {/* Logout */}
       <button
         onClick={handleLogout}
-        className="flex items-center px-5 py-4 text-sm text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors border-t border-slate-800 flex-shrink-0"
+        className="flex items-center px-5 py-4 text-sm text-slate-500 hover:text-pink-400 hover:bg-slate-800 transition-colors border-t border-slate-800 flex-shrink-0"
       >
         <LogOut className="w-4 h-4 mr-3" />
         Sair do Sistema
@@ -96,7 +88,6 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
     pathname.startsWith('/admin/portaria') ||
     pathname.startsWith('/admin/bilheteria')
 
-  // Verifica permissão de acesso conforme o papel do usuário
   useEffect(() => {
     if (pathname === '/admin/login') {
       setChecked(true)
@@ -136,21 +127,20 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
     return () => { active = false }
   }, [pathname, router])
 
-  // Login, portaria e bilheteria: render sem sidebar (interfaces dedicadas)
   if (isFullScreenRoute) {
     return <>{children}</>
   }
 
   if (!checked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen bg-slate-950 text-slate-100">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 flex-col fixed left-0 top-0 bottom-0 border-r border-slate-800 z-30">
         <SidebarContent />
@@ -183,7 +173,7 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-bold text-rose-500 uppercase tracking-wider text-sm">🎪 Admin</span>
+          <span className="font-bold text-pink-400 uppercase tracking-wider text-sm">🎪 Admin</span>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">

@@ -1,134 +1,215 @@
-// @ts-nocheck
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import { Ticket, CheckCircle2, Clock, XCircle } from 'lucide-react';
+'use client'
 
-export default async function IngressosPage() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/admin/login');
+import { useState, useEffect, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Ticket, CheckCircle2, Clock, Download } from 'lucide-react'
 
-  const { data: ingressos, error } = await supabase
-    .from('ingressos')
-    .select(`
-      id, status, preco_pago, pago_em, created_at, stripe_session_id,
-      cliente:clientes(nome, email, whatsapp),
-      espetaculo:espetaculos(nome, data_hora),
-      tipo:tipos_ingresso(nome)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(300);
+interface Pedido {
+  id: string
+  status: string
+  canal: string
+  total: number
+  nome_cliente: string
+  email_cliente: string
+  whatsapp_cliente: string
+  created_at: string
+  codigo?: string
+  espetaculo: { nome: string; data_hora: string } | null
+  itens: { quantidade: number; tipo: string; setor: { nome: string } | null }[]
+}
 
-  const statusInfo: Record<string, { label: string; icon: any; color: string }> = {
-    pago:      { label: 'Pago',      icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    pendente:  { label: 'Pendente',  icon: Clock,        color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    cancelado: { label: 'Cancelado', icon: XCircle,      color: 'text-red-600 bg-red-50 border-red-200' },
-    usado:     { label: 'Usado',     icon: CheckCircle2, color: 'text-slate-600 bg-slate-50 border-slate-200' },
-  };
+export default function IngressosPage() {
+  const [pedidos, setPedidos] = useState<Pedido[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filtro, setFiltro]   = useState<'todos' | 'pago' | 'pendente'>('todos')
 
-  const totals = {
-    pago: ingressos?.filter(i => i.status === 'pago').length || 0,
-    receita: ingressos?.filter(i => i.status === 'pago').reduce((acc, i) => acc + Number(i.preco_pago || 0), 0) || 0,
-    pendente: ingressos?.filter(i => i.status === 'pendente').length || 0,
-  };
+  const load = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('pedidos')
+      .select(`
+        id, status, canal, total, nome_cliente, email_cliente, whatsapp_cliente, created_at, codigo,
+        espetaculo:espetaculos(nome, data_hora),
+        itens:pedido_itens(quantidade, tipo, setor:setores(nome))
+      `)
+      .order('created_at', { ascending: false })
+      .limit(500)
+    setPedidos((data as unknown as Pedido[]) || [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const fmt = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+
+  const filtered = pedidos.filter(p => filtro === 'todos' || p.status === filtro)
+  const pagos    = pedidos.filter(p => p.status === 'pago')
+  const pendentes = pedidos.filter(p => p.status === 'pendente')
+  const receita  = pagos.reduce((s, p) => s + Number(p.total), 0)
+  const totalIngressosPagos = pagos.reduce((s, p) => s + (p.itens?.reduce((a, i) => a + i.quantidade, 0) ?? 0), 0)
+
+  function downloadCSV() {
+    const rows = filtered.map(p => ({
+      Codigo: p.codigo ?? p.id.slice(0, 8),
+      Status: p.status,
+      Cliente: p.nome_cliente,
+      WhatsApp: p.whatsapp_cliente,
+      Email: p.email_cliente,
+      Espetaculo: p.espetaculo?.nome ?? '',
+      Data_Show: p.espetaculo?.data_hora ? fmtDate(p.espetaculo.data_hora) : '',
+      Canal: p.canal,
+      Total: p.total,
+      Data_Compra: fmtDate(p.created_at),
+      Ingressos: p.itens?.reduce((a, i) => a + i.quantidade, 0) ?? 0,
+    }))
+    const cols = ['Codigo', 'Status', 'Cliente', 'WhatsApp', 'Email', 'Espetaculo', 'Data_Show', 'Canal', 'Total', 'Data_Compra', 'Ingressos']
+    const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const csv = [cols.join(';'), ...rows.map(r => cols.map(c => escape((r as Record<string, unknown>)[c])).join(';'))].join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'ingressos.csv'
+    a.click()
+  }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <header className="mb-8">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Ingressos</h1>
-        <p className="text-slate-500 mt-1">Todos os ingressos emitidos pelo sistema</p>
-      </header>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Ingressos</h1>
+          <p className="text-slate-400 text-sm mt-0.5">Todos os pedidos do sistema</p>
+        </div>
+        <button onClick={downloadCSV} className="flex items-center gap-1.5 text-xs bg-pink-600 hover:bg-pink-700 text-white px-4 py-2.5 rounded-lg transition-colors">
+          <Download className="w-4 h-4" /> Exportar CSV
+        </button>
+      </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-          <p className="text-sm text-slate-500 mb-1">Ingressos Pagos</p>
-          <p className="text-3xl font-extrabold text-emerald-600">{totals.pago}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+          <div className="w-9 h-9 bg-pink-500/10 border border-pink-500/20 rounded-xl flex items-center justify-center mb-3">
+            <Ticket className="w-5 h-5 text-pink-400" />
+          </div>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">Pedidos pagos</p>
+          <p className="text-2xl font-bold text-pink-400 mt-1">{pagos.length}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-          <p className="text-sm text-slate-500 mb-1">Receita Total</p>
-          <p className="text-3xl font-extrabold text-slate-800">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.receita)}
-          </p>
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+          <div className="w-9 h-9 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center justify-center mb-3">
+            <CheckCircle2 className="w-5 h-5 text-yellow-400" />
+          </div>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">Ingressos emitidos</p>
+          <p className="text-2xl font-bold text-yellow-400 mt-1">{totalIngressosPagos}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-          <p className="text-sm text-slate-500 mb-1">Pendentes</p>
-          <p className="text-3xl font-extrabold text-amber-500">{totals.pendente}</p>
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+          <div className="w-9 h-9 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center justify-center mb-3">
+            <span className="text-green-400 font-bold text-sm">R$</span>
+          </div>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">Receita total</p>
+          <p className="text-2xl font-bold text-green-400 mt-1">{fmt(receita)}</p>
+        </div>
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+          <div className="w-9 h-9 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center justify-center mb-3">
+            <Clock className="w-5 h-5 text-yellow-400" />
+          </div>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">Pendentes</p>
+          <p className="text-2xl font-bold text-yellow-400 mt-1">{pendentes.length}</p>
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6">
-          Erro: {error.message}
+      {/* Filter + Table */}
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-1 px-4 py-3 border-b border-slate-700">
+          {(['todos', 'pago', 'pendente'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFiltro(f)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                filtro === f
+                  ? 'bg-pink-600 text-white'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+              }`}
+            >
+              {f === 'todos' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1)}
+              <span className="ml-1.5 opacity-60">
+                {f === 'todos' ? pedidos.length : f === 'pago' ? pagos.length : pendentes.length}
+              </span>
+            </button>
+          ))}
+          <button onClick={load} className="ml-auto text-xs text-slate-400 hover:text-pink-400 transition-colors">↻</button>
         </div>
-      )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {!ingressos?.length ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <Ticket className="w-12 h-12 mb-3 opacity-30" />
-            <p className="text-lg font-medium">Nenhum ingresso emitido ainda</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="text-xs uppercase bg-slate-50 text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Cliente</th>
-                  <th className="px-4 py-3 font-semibold">Espetáculo</th>
-                  <th className="px-4 py-3 font-semibold">Tipo</th>
-                  <th className="px-4 py-3 font-semibold text-right">Valor</th>
-                  <th className="px-4 py-3 font-semibold">Data</th>
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="p-8 text-center text-slate-500 text-sm animate-pulse">Carregando...</div>
+          ) : !filtered.length ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+              <Ticket className="w-10 h-10 mb-3 opacity-30" />
+              <p className="text-sm">Nenhum pedido encontrado</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-900/50">
+                  {['Status', 'Código', 'Cliente', 'Espetáculo', 'Qtd', 'Canal', 'Total', 'Data'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody>
-                {ingressos.map((ing: any) => {
-                  const st = statusInfo[ing.status] || statusInfo['pendente'];
-                  const Icon = st.icon;
+              <tbody className="divide-y divide-slate-700/50">
+                {filtered.map(p => {
+                  const qtd = p.itens?.reduce((a, i) => a + i.quantidade, 0) ?? 0
                   return (
-                    <tr key={ing.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                    <tr key={p.id} className="hover:bg-slate-700/20 transition-colors">
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold ${st.color}`}>
-                          <Icon className="w-3.5 h-3.5" />
-                          {st.label}
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          p.status === 'pago'
+                            ? 'bg-green-500/15 text-green-400 border border-green-500/20'
+                            : p.status === 'cancelado'
+                            ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                            : 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
+                        }`}>
+                          {p.status === 'pago' ? 'Pago' : p.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-slate-800">{ing.cliente?.nome || '—'}</p>
-                          <p className="text-xs text-slate-400">{ing.cliente?.email || ''}</p>
-                        </div>
+                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">
+                        {p.codigo ?? p.id.slice(0, 8).toUpperCase()}
                       </td>
                       <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-slate-700">{ing.espetaculo?.nome || '—'}</p>
-                          {ing.espetaculo?.data_hora && (
-                            <p className="text-xs text-slate-400">
-                              {new Date(ing.espetaculo.data_hora).toLocaleDateString('pt-BR')}
-                            </p>
-                          )}
-                        </div>
+                        <p className="text-slate-200 font-medium truncate max-w-[140px]">{p.nome_cliente || '—'}</p>
+                        {p.whatsapp_cliente && (
+                          <a href={`https://wa.me/55${p.whatsapp_cliente.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-xs text-green-400 hover:underline">
+                            {p.whatsapp_cliente}
+                          </a>
+                        )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-amber-50 text-amber-600 border border-amber-100 text-xs font-semibold rounded">
-                          {ing.tipo?.nome || 'Padrão'}
+                        <p className="text-slate-200 truncate max-w-[160px]">{p.espetaculo?.nome ?? '—'}</p>
+                        {p.espetaculo?.data_hora && (
+                          <p className="text-xs text-slate-500">{fmtDate(p.espetaculo.data_hora)}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-yellow-400 font-medium">{qtd}</td>
+                      <td className="px-4 py-3">
+                        <span className={p.canal === 'bilheteria' ? 'text-yellow-400' : 'text-pink-400'}>
+                          {p.canal === 'bilheteria' ? 'Bilheteria' : 'Online'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-slate-700">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(ing.preco_pago || 0)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-400">
-                        {new Date(ing.pago_em || ing.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </td>
+                      <td className="px-4 py-3 text-green-400 font-bold">{fmt(p.total)}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(p.created_at)}</td>
                     </tr>
-                  );
+                  )
                 })}
               </tbody>
             </table>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
-  );
+  )
 }

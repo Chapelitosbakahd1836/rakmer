@@ -53,8 +53,8 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
         <div className="p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mb-4">
-              <Tent className="w-8 h-8 text-rose-500" />
+            <div className="w-16 h-16 bg-pink-500/10 rounded-full flex items-center justify-center mb-4">
+              <Tent className="w-8 h-8 text-pink-400" />
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">Admin Login</h1>
             <p className="text-slate-400 mt-2 text-sm">Acesso restrito à equipe Rakmer</p>
@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-colors"
                 placeholder="admin@rakmer.com"
               />
             </div>
@@ -91,7 +91,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 pr-12 text-white focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 pr-12 text-white focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-colors"
                   placeholder="••••••••"
                 />
                 <button
@@ -108,7 +108,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800 disabled:text-rose-300 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center"
+              className="w-full bg-pink-600 hover:bg-pink-700 disabled:bg-pink-800 disabled:text-pink-300 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center"
             >
               {loading ? 'Entrando...' : 'Acessar Painel'}
             </button>

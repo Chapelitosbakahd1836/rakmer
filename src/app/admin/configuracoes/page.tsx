@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { buscarConfigs, buscarTemplates, buscarShowsGerados } from '@/app/actions/configuracoes'
-import ConfiguracoesClient from './ConfiguracoesClient'
+import ConfiguracoesTabs from './ConfiguracoesTabs'
 
 export default async function ConfiguracoesPage() {
   const supabase = createClient()
@@ -15,7 +15,7 @@ export default async function ConfiguracoesPage() {
   ])
 
   return (
-    <ConfiguracoesClient
+    <ConfiguracoesTabs
       initialConfigs={configs}
       initialTemplates={templates}
       initialShows={shows}

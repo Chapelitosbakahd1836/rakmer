@@ -20,7 +20,7 @@ export async function GET() {
 
     supabase
       .from('leads')
-      .select('id, nome, email, whatsapp, canal, created_at')
+      .select('id, nome, email, whatsapp, utm_source, created_at')
       .not('whatsapp', 'is', null)
       .neq('whatsapp', '')
       .order('created_at', { ascending: false }),

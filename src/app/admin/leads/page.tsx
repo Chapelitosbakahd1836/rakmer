@@ -27,7 +27,7 @@ interface Lead {
   nome: string
   email: string
   whatsapp: string
-  canal: string
+  utm_source: string
   created_at: string
 }
 
@@ -102,9 +102,9 @@ export default function ContatosPage() {
       Nome: l.nome,
       Email: l.email,
       WhatsApp: l.whatsapp,
-      Canal: l.canal,
+      Origem: l.utm_source || 'direto',
       Data: fmtDate(l.created_at),
-    })), ['Nome', 'Email', 'WhatsApp', 'Canal', 'Data'])
+    })), ['Nome', 'Email', 'WhatsApp', 'Origem', 'Data'])
     download(csv, 'leads.csv')
   }
 
@@ -225,7 +225,7 @@ export default function ContatosPage() {
                 return [
                   l.nome || '—',
                   <a href={`https://wa.me/55${l.whatsapp?.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-green-400 hover:underline">{l.whatsapp}</a>,
-                  l.canal || '—',
+                  l.utm_source || 'direto',
                   fmtDate(l.created_at),
                 ]
               }}
@@ -241,7 +241,7 @@ export default function ContatosPage() {
                 return [
                   l.nome || '—',
                   <a href={`https://wa.me/55${l.whatsapp?.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-green-400 hover:underline">{l.whatsapp}</a>,
-                  l.canal || '—',
+                  l.utm_source || 'direto',
                   fmtDate(l.created_at),
                 ]
               }}

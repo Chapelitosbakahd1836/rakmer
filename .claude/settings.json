@@ -1,8 +1,15 @@
 {
   "mcpServers": {
     "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=ywkvxhjswkkdufqktpca"
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--supabase-url",
+        "https://ywkvxhjswkkdufqktpca.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3a3Z4aGpzd2trZHVmcWt0cGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1MTQ5MzEsImV4cCI6MjA5ODA5MDkzMX0.SprOQ47e0CxzL8lM3OTt51B7Ju3GWrDUuxBjU4uYeS0",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3a3Z4aGpzd2trZHVmcWt0cGNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjUxNDkzMSwiZXhwIjoyMDk4MDkwOTMxfQ.mWU5LJfiyaYpwlD5Dngu205cmMMbKfvWIVftOXOKr1Y"
+      ]
     }
   }
 }

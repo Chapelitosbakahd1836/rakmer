@@ -13,7 +13,7 @@ interface Pedido {
   email_cliente: string
   whatsapp_cliente: string
   created_at: string
-  codigo?: string
+  codigo: string | null
   espetaculo: { nome: string; data_hora: string } | null
   itens: { quantidade: number; tipo: string; setor: { nome: string } | null }[]
 }
@@ -29,7 +29,7 @@ export default function IngressosPage() {
     const { data } = await supabase
       .from('pedidos')
       .select(`
-        id, status, canal, total, nome_cliente, email_cliente, whatsapp_cliente, created_at, codigo,
+        id, status, canal, total, codigo, nome_cliente, email_cliente, whatsapp_cliente, created_at,
         espetaculo:espetaculos(nome, data_hora),
         itens:pedido_itens(quantidade, tipo, setor:setores(nome))
       `)
@@ -53,7 +53,7 @@ export default function IngressosPage() {
 
   function downloadCSV() {
     const rows = filtered.map(p => ({
-      Codigo: p.codigo ?? p.id.slice(0, 8),
+      Codigo: p.codigo ?? p.id.slice(0, 8).toUpperCase(),
       Status: p.status,
       Cliente: p.nome_cliente,
       WhatsApp: p.whatsapp_cliente,
